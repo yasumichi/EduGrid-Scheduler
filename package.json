@@ -1,0 +1,21 @@
+{
+  "name": "opencode-timetable-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.0.0",
+    "date-fns": "^3.6.0",
+    "preact": "^10.20.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.8.1",
+    "typescript": "^5.2.2",
+    "vite": "^8.0.3"
+  }
+}
