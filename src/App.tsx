@@ -52,7 +52,7 @@ export function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>学校スケジューラー</h1>
+        <h1>EduGrid Scheduler</h1>
 
         <div className="controls">
           <div className="control-group">
