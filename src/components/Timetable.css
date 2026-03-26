@@ -153,6 +153,30 @@
   min-width: 120px;
 }
 
+.date-picker {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.date-picker:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+@media (prefers-color-scheme: light) {
+  .date-picker {
+    background: #fff;
+    color: #333;
+    border-color: #ccc;
+  }
+}
+
 @media (prefers-color-scheme: light) {
   .timetable-container { background-color: #f9f9f9; }
   .grid-corner { background-color: #eee; border-color: #ccc; }

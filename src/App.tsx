@@ -2,16 +2,16 @@ import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { Timetable } from './components/Timetable';
 import { MOCK_RESOURCES, MOCK_LESSONS, ResourceType, ViewType, DEFAULT_PERIODS, Holiday, ResourceLabels } from './types';
-import { format, addDays, getYear, getMonth } from 'date-fns';
+import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
 export function App() {
   const viewMode = useSignal<ResourceType>('room');
   const viewType = useSignal<ViewType>('day');
   const currentDate = useSignal<Date>(new Date('2026-03-26'));
   const holidays = useSignal<Holiday[]>([]);
-  const isHolidayMode = useSignal<boolean>(false); // 祝日テーマのトグル
+  const isHolidayMode = useSignal<boolean>(false);
 
-  // リソースの表示名設定 (ここで自由に変更可能)
+  // リソースの表示名設定
   const resourceLabels = useSignal<ResourceLabels>({
     room: '教室',
     teacher: '講師',
@@ -32,6 +32,13 @@ export function App() {
     if (viewType.value === 'week') currentDate.value = addDays(currentDate.value, amount * 7);
     if (viewType.value === 'month') currentDate.value = addDays(currentDate.value, amount * 30);
     if (viewType.value === 'year') currentDate.value = addDays(currentDate.value, amount * 365);
+  };
+
+  const handleDateChange = (e: any) => {
+    const newDate = parseISO(e.target.value);
+    if (!isNaN(newDate.getTime())) {
+      currentDate.value = newDate;
+    }
   };
 
   const handleViewTypeChange = (type: ViewType) => {
@@ -63,7 +70,12 @@ export function App() {
 
           <div className="control-group date-nav">
             <button onClick={() => moveDate(-1)}>前へ</button>
-            <span className="current-date">{format(currentDate.value, 'yyyy/MM/dd')}〜</span>
+            <input 
+              type="date" 
+              className="date-picker"
+              value={format(currentDate.value, 'yyyy-MM-dd')}
+              onChange={handleDateChange}
+            />
             <button onClick={() => moveDate(1)}>次へ</button>
           </div>
 
