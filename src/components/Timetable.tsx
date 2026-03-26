@@ -4,7 +4,7 @@ import './Timetable.css';
 
 interface Props {
   periods: TimePeriod[];
-  resources: Resource[];
+  resources: Resource[]; // 全リソース（表示対象外も含む）
   lessons: Lesson[];
   viewMode: ResourceType;
   viewType: ViewType;
@@ -16,6 +16,11 @@ interface Props {
 export function Timetable({ periods, resources, lessons, viewMode, viewType, baseDate, holidays, labels }: Props) {
   const locale = navigator.language;
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', weekday: 'short' });
+
+  // IDからリソース名を取得するヘルパー
+  const getResourceName = (id: string) => {
+    return resources.find(r => r.id === id)?.name || id;
+  };
 
   const getHoliday = (date: Date) => {
     return holidays.find(h => {
@@ -47,7 +52,7 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: `150px repeat(${displayDates.length * periods.length}, minmax(${colWidth}, 1fr))`,
-    gridTemplateRows: `auto auto repeat(${resources.length}, 80px)`,
+    gridTemplateRows: `auto auto repeat(${resources.filter(r => r.type === viewMode).length}, 80px)`,
   };
 
   const dateHeaders = displayDates.map((date, dIdx) => {
@@ -94,7 +99,10 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
     })
   );
 
-  const resourceLabels = resources.map((r, idx) => (
+  // 表示モードに一致するリソースのみを行の見出しとして表示
+  const filteredResources = resources.filter(r => r.type === viewMode);
+
+  const resourceLabels = filteredResources.map((r, idx) => (
     <div key={`label-${r.id}`} className="grid-label" style={{ gridColumn: 1, gridRow: idx + 3 }}>
       {r.name}
     </div>
@@ -102,7 +110,7 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
 
   const lessonItems = lessons.filter(l => {
     const resId = viewMode === 'room' ? l.roomId : viewMode === 'teacher' ? l.teacherId : l.courseId;
-    const resMatch = resources.some(r => r.id === resId);
+    const resMatch = filteredResources.some(r => r.id === resId);
     if (!resMatch) return false;
     const lessonDate = parseISO(l.date);
     return displayDates.some(d => isSameDay(d, lessonDate));
@@ -111,18 +119,19 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
     const dayIdx = displayDates.findIndex(d => isSameDay(d, lessonDate));
     const periodIdx = periods.findIndex(p => p.id === l.startPeriodId);
     const resId = viewMode === 'room' ? l.roomId : viewMode === 'teacher' ? l.teacherId : l.courseId;
-    const resourceIdx = resources.findIndex(r => r.id === resId);
+    const resourceIdx = filteredResources.findIndex(r => r.id === resId);
 
     if (dayIdx === -1 || periodIdx === -1 || resourceIdx === -1) return null;
 
     const startCol = dayIdx * periods.length + periodIdx + 2;
 
     // カード内の追加情報の表示ラベルを決定
-    let infoLabel = '';
-    let infoValue = '';
-    if (viewMode === 'room') { infoLabel = labels.teacher; infoValue = l.teacherId; }
-    else if (viewMode === 'teacher') { infoLabel = labels.room; infoValue = l.roomId; }
-    else { infoLabel = labels.room; infoValue = l.roomId; }
+    const infoItems = [];
+    if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
+    if (viewMode !== 'teacher') infoItems.push({ label: labels.teacher, value: getResourceName(l.teacherId) });
+    if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
+
+    const tooltipText = `${l.subject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
 
     return (
       <div 
@@ -132,23 +141,26 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
           gridColumn: `${startCol} / span ${l.duration}`,
           gridRow: resourceIdx + 3
         }}
+        title={tooltipText}
       >
         <div className="lesson-subject">{l.subject}</div>
-        <div className="lesson-info">
-          {infoLabel}: {infoValue}
+        <div className="lesson-details">
+          {infoItems.map((item, idx) => (
+            <div key={idx} className="lesson-info">
+              {item.label}: {item.value}
+            </div>
+          ))}
         </div>
       </div>
     );
   });
-return (
-  <div className="timetable-wrapper">
-    <div className="timetable-container" style={gridStyle}>
-      {/* 左上の角を隠す固定エリア */}
-      <div className="grid-corner" style={{ gridColumn: 1, gridRow: "1 / span 2" }} />
 
-      {/* 背景グリッド */}
-
-        {resources.map((_, rIdx) => 
+  return (
+    <div className="timetable-wrapper">
+      <div className="timetable-container" style={gridStyle}>
+        <div className="grid-corner" style={{ gridColumn: 1, gridRow: "1 / span 2" }} />
+        
+        {filteredResources.map((_, rIdx) => 
           displayDates.map((date, dIdx) => {
             const isSun = date.getDay() === 0;
             const isSat = date.getDay() === 6;

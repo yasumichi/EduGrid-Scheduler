@@ -115,11 +115,19 @@
 .lesson-subject {
   font-weight: bold;
   font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+.lesson-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .lesson-info {
-  font-size: 0.6rem;
-  opacity: 0.8;
+  font-size: 0.65rem;
+  opacity: 0.9;
+  line-height: 1.1;
 }
 
 .controls {

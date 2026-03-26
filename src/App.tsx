@@ -81,7 +81,7 @@ export function App() {
       <div className={`timetable-view ${isHolidayMode.value ? 'holiday-theme' : ''}`}>
         <Timetable 
           periods={DEFAULT_PERIODS}
-          resources={filteredResources}
+          resources={MOCK_RESOURCES}
           lessons={MOCK_LESSONS}
           viewMode={viewMode.value}
           viewType={viewType.value}
