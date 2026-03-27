@@ -9,12 +9,24 @@ export interface ResourceLabels {
   room: string;
   teacher: string;
   course: string;
+  event: string;
 }
 
 export interface Resource {
   id: string;
   name: string;
   type: ResourceType;
+  order?: number;
+}
+
+export interface ScheduleEvent {
+  id: string;
+  name: string;
+  startDate: string;
+  startPeriodId: string;
+  endDate: string;
+  endPeriodId: string;
+  color?: string;
 }
 
 export interface Lesson {
@@ -52,15 +64,15 @@ export const DEFAULT_PERIODS: TimePeriod[] = [
 const generateResources = (): Resource[] => {
   const resources: Resource[] = [];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `r${i}`, name: `${100 + i}号室`, type: 'room' });
+    resources.push({ id: `r${i}`, name: `${100 + i}号室`, type: 'room', order: i });
   }
   const surnames = ['佐藤', '鈴木', '高橋', '田中', '渡辺', '伊藤', '山本', '中村', '小林', '加藤', '吉田', '山田', '佐々木', '山口', '松本', '井上', '木村', '林', '斎藤', '清水'];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `t${i}`, name: `${surnames[i-1]} 先生`, type: 'teacher' });
+    resources.push({ id: `t${i}`, name: `${surnames[i-1]} 先生`, type: 'teacher', order: i });
   }
   const courseNames = ['特進数学', '実用英語', '物理探究', '日本史B', '現代文演習', '化学基礎', '世界史A', '地理B', '生物特講', '政治経済', '古典特講', '情報I', '芸術基礎', '体育特論', '英語表現', '数学IIB', '論理国語', '科学人間学', 'キャリア探究', '多文化理解'];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `c${i}`, name: `${courseNames[i-1]}講座`, type: 'course' });
+    resources.push({ id: `c${i}`, name: `${courseNames[i-1]}講座`, type: 'course', order: i });
   }
   return resources;
 };
@@ -101,11 +113,71 @@ const generateLessons = (): Lesson[] => {
     endPeriodId: 'p4'
   });
 
+  // 2026年4月のテストデータ
+  const aprilDate = '2026-04-06';
+  for (let i = 1; i <= 10; i++) {
+    lessons.push({
+      id: `l-apr-${i}`,
+      subject: subjects[i % subjects.length],
+      teacherId: `t${i}`,
+      roomId: `r${i}`,
+      courseId: `c${i}`,
+      startDate: aprilDate,
+      startPeriodId: `p${i % 8 + 1}`,
+      endDate: aprilDate,
+      endPeriodId: `p${i % 8 + 1}`
+    });
+  }
+
   return lessons;
 };
 
 export const MOCK_LESSONS = generateLessons();
 
+export const MOCK_EVENTS: ScheduleEvent[] = [
+  {
+    id: 'e1',
+    name: '校内清掃',
+    startDate: '2026-03-26',
+    startPeriodId: 'p7',
+    endDate: '2026-03-26',
+    endPeriodId: 'p8',
+    color: '#e2e8f0'
+  },
+  {
+    id: 'e2',
+    name: '三者面談期間',
+    startDate: '2026-03-24',
+    startPeriodId: 'p1',
+    endDate: '2026-03-26',
+    endPeriodId: 'p8',
+    color: '#fef3c7'
+  },
+  {
+    id: 'e-apr-1',
+    name: '入学式',
+    startDate: '2026-04-06',
+    startPeriodId: 'p1',
+    endDate: '2026-04-06',
+    endPeriodId: 'p8',
+    color: '#fee2e2'
+  },
+  {
+    id: 'e-apr-2',
+    name: 'オリエンテーション期間',
+    startDate: '2026-04-07',
+    startPeriodId: 'p1',
+    endDate: '2026-04-10',
+    endPeriodId: 'p8',
+    color: '#f0f9ff'
+  }
+];
+
 export const MOCK_HOLIDAYS: Holiday[] = [
   { date: '2026-01-01', name: '元日' },
+  { date: '2026-02-11', name: '建国記念の日' },
+  { date: '2026-02-23', name: '天皇誕生日' },
+  { date: '2026-03-20', name: '春分の日' },
+  { date: '2026-04-29', name: '昭和の日' },
+  { start: '2026-12-29', end: '2027-01-03', name: '年末年始休暇' }
 ];

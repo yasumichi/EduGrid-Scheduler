@@ -1,7 +1,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { Timetable } from './components/Timetable';
-import { MOCK_RESOURCES, MOCK_LESSONS, ResourceType, ViewType, DEFAULT_PERIODS, Holiday, ResourceLabels } from './types';
+import { MOCK_RESOURCES, MOCK_LESSONS, MOCK_EVENTS, ResourceType, ViewType, DEFAULT_PERIODS, Holiday, ResourceLabels, ScheduleEvent } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
 export function App() {
@@ -10,12 +10,14 @@ export function App() {
   const currentDate = useSignal<Date>(new Date('2026-03-26'));
   const holidays = useSignal<Holiday[]>([]);
   const isHolidayMode = useSignal<boolean>(false);
+  const events = useSignal<ScheduleEvent[]>(MOCK_EVENTS);
 
   // リソースの表示名設定
   const resourceLabels = useSignal<ResourceLabels>({
     room: '教室',
     teacher: '講師',
-    course: '講座'
+    course: '講座',
+    event: 'イベント'
   });
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export function App() {
           periods={DEFAULT_PERIODS}
           resources={MOCK_RESOURCES}
           lessons={MOCK_LESSONS}
+          events={events.value}
           viewMode={viewMode.value}
           viewType={viewType.value}
           baseDate={currentDate.value}

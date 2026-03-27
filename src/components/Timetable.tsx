@@ -1,11 +1,12 @@
-import { TimePeriod, Resource, Lesson, ResourceType, ViewType, Holiday, ResourceLabels } from '../types';
-import { format, addDays, isSameDay, parseISO, getYear, differenceInDays, isWithinInterval, isBefore, isAfter } from 'date-fns';
+import { TimePeriod, Resource, Lesson, ResourceType, ViewType, Holiday, ResourceLabels, ScheduleEvent } from '../types';
+import { format, addDays, isSameDay, parseISO, getYear, differenceInDays, isWithinInterval, isBefore, isAfter, startOfDay } from 'date-fns';
 import './Timetable.css';
 
 interface Props {
   periods: TimePeriod[];
   resources: Resource[];
   lessons: Lesson[];
+  events: ScheduleEvent[];
   viewMode: ResourceType;
   viewType: ViewType;
   baseDate: Date;
@@ -13,7 +14,7 @@ interface Props {
   labels: ResourceLabels;
 }
 
-export function Timetable({ periods, resources, lessons, viewMode, viewType, baseDate, holidays, labels }: Props) {
+export function Timetable({ periods, resources, lessons, events, viewMode, viewType, baseDate, holidays, labels }: Props) {
   const locale = navigator.language;
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', weekday: 'short' });
 
@@ -22,10 +23,14 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
   };
 
   const getHoliday = (date: Date) => {
+    const target = startOfDay(date);
     return holidays.find(h => {
-      if (h.date) return isSameDay(date, parseISO(h.date));
+      if (h.date) return isSameDay(target, parseISO(h.date));
       if (h.start && h.end) {
-        return isWithinInterval(date, { start: parseISO(h.start), end: parseISO(h.end) });
+        const start = startOfDay(parseISO(h.start));
+        const end = startOfDay(parseISO(h.end));
+        return (isSameDay(target, start) || isAfter(target, start)) && 
+               (isSameDay(target, end) || isBefore(target, end));
       }
       return false;
     });
@@ -46,11 +51,15 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
   const dayCount = getDayCount();
   const displayDates = Array.from({ length: dayCount }).map((_, i) => addDays(baseDate, i));
 
+  const filteredResources = resources
+    .filter(r => r.type === viewMode)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
   const colWidth = '60px';
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: `150px repeat(${displayDates.length * periods.length}, minmax(${colWidth}, 1fr))`,
-    gridTemplateRows: `auto auto repeat(${resources.filter(r => r.type === viewMode).length}, 80px)`,
+    gridTemplateRows: `auto auto 80px repeat(${filteredResources.length}, 80px)`,
   };
 
   const dateHeaders = displayDates.map((date, dIdx) => {
@@ -96,9 +105,112 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
     })
   );
 
-  const filteredResources = resources.filter(r => r.type === viewMode);
+  const eventLabel = (
+    <div key="label-event" className="event-label" style={{ gridColumn: 1, gridRow: 3 }}>
+      {labels.event}
+    </div>
+  );
+
+  const eventCells = displayDates.flatMap((date, dIdx) => {
+    const holiday = getHoliday(date);
+    const isSun = date.getDay() === 0;
+    const isSat = date.getDay() === 6;
+    let className = 'grid-cell event-cell';
+    if (isSun) className += ' is-sunday';
+    if (isSat) className += ' is-saturday';
+    if (holiday) className += ' is-holiday';
+
+    return periods.map((_, pIdx) => (
+      <div key={`event-cell-${dIdx}-${pIdx}`} 
+           className={className} 
+           style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: 3 }} />
+    ));
+  });
+
+  const holidayItems = displayDates.map((date, dIdx) => {
+    const holiday = getHoliday(date);
+    if (!holiday) return null;
+
+    // 期間休暇の場合、表示範囲内での開始と終了を考慮する必要があるが、
+    // ここでは簡易的に単一日の表示または期間の重なりを表示
+    // 実際には holiday.start/end がある場合、複数セルをスパンさせるのが望ましい
+    
+    // とりあえず単一日の祝日表示
+    if (holiday.date && isSameDay(date, parseISO(holiday.date))) {
+      return (
+        <div key={`holiday-${date.toISOString()}`}
+             className="event-card holiday-card"
+             style={{ gridColumn: `${dIdx * periods.length + 2} / span ${periods.length}`, gridRow: 3 }}>
+          {holiday.name}
+        </div>
+      );
+    }
+    
+    // 期間休暇の開始日、または表示範囲の開始日に描画
+    const hStart = holiday.start ? parseISO(holiday.start) : null;
+    const hEnd = holiday.end ? parseISO(holiday.end) : null;
+    
+    if (hStart && hEnd) {
+      if (isSameDay(date, hStart) || (isSameDay(date, displayDates[0]) && isAfter(date, hStart) && isBefore(date, hEnd))) {
+        const actualStart = isAfter(hStart, displayDates[0]) ? hStart : displayDates[0];
+        const actualEnd = isBefore(hEnd, displayDates[displayDates.length - 1]) ? hEnd : displayDates[displayDates.length - 1];
+        
+        const sIdx = displayDates.findIndex(d => isSameDay(d, actualStart));
+        const eIdx = displayDates.findIndex(d => isSameDay(d, actualEnd));
+        
+        if (sIdx !== -1 && eIdx !== -1 && isSameDay(date, actualStart)) {
+          const startCol = sIdx * periods.length + 2;
+          const endCol = eIdx * periods.length + periods.length + 1;
+          return (
+            <div key={`holiday-range-${holiday.name}-${date.toISOString()}`}
+                 className="event-card holiday-card"
+                 style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 3 }}>
+              {holiday.name}
+            </div>
+          );
+        }
+      }
+    }
+    
+    return null;
+  });
+
+  const scheduleEventItems = events.filter(e => {
+    const eStart = parseISO(e.startDate);
+    const eEnd = parseISO(e.endDate);
+    const viewStart = displayDates[0];
+    const viewEnd = displayDates[displayDates.length - 1];
+    return !(isAfter(eStart, viewEnd) || isBefore(eEnd, viewStart));
+  }).map(e => {
+    const eStart = parseISO(e.startDate);
+    const eEnd = parseISO(e.endDate);
+    
+    const startDayIdx = displayDates.findIndex(d => isSameDay(d, eStart));
+    const endDayIdx = displayDates.findIndex(d => isSameDay(d, eEnd));
+    const startPeriodIdx = periods.findIndex(p => p.id === e.startPeriodId);
+    const endPeriodIdx = periods.findIndex(p => p.id === e.endPeriodId);
+
+    if (startDayIdx === -1 || endDayIdx === -1) return null;
+
+    const startCol = startDayIdx * periods.length + startPeriodIdx + 2;
+    const endCol = endDayIdx * periods.length + endPeriodIdx + 2;
+    const span = endCol - startCol + 1;
+
+    return (
+      <div key={`event-${e.id}`} 
+           className="event-card schedule-event-card"
+           style={{ 
+             gridColumn: `${startCol} / span ${span}`, 
+             gridRow: 3,
+             backgroundColor: e.color
+           }}>
+        {e.name}
+      </div>
+    );
+  });
+
   const resourceLabels = filteredResources.map((r, idx) => (
-    <div key={`label-${r.id}`} className="grid-label" style={{ gridColumn: 1, gridRow: idx + 3 }}>
+    <div key={`label-${r.id}`} className="grid-label" style={{ gridColumn: 1, gridRow: idx + 4 }}>
       {r.name}
     </div>
   ));
@@ -108,7 +220,6 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
     const resMatch = filteredResources.some(r => r.id === resId);
     if (!resMatch) return false;
 
-    // 表示期間（displayDates）と授業期間（startDate〜endDate）に重なりがあるかチェック
     const lStart = parseISO(l.startDate);
     const lEnd = parseISO(l.endDate);
     const viewStart = displayDates[0];
@@ -119,14 +230,11 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
     const lStart = parseISO(l.startDate);
     const lEnd = parseISO(l.endDate);
     
-    // グリッド上の開始位置と終了位置を計算
     const startDayIdx = displayDates.findIndex(d => isSameDay(d, lStart));
     const endDayIdx = displayDates.findIndex(d => isSameDay(d, lEnd));
     const startPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
     const endPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
 
-    // 表示範囲外から始まっている、または外で終わっている場合のクリッピング処理
-    // (プロトタイプなので簡易的に、範囲内にある場合のみ描画)
     if (startDayIdx === -1 || endDayIdx === -1) return null;
 
     const resourceIdx = filteredResources.findIndex(r => {
@@ -151,7 +259,7 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
         className="lesson-card"
         style={{
           gridColumn: `${startCol} / span ${span}`,
-          gridRow: resourceIdx + 3
+          gridRow: resourceIdx + 4
         }}
         title={tooltipText}
       >
@@ -183,12 +291,16 @@ export function Timetable({ periods, resources, lessons, viewMode, viewType, bas
             return periods.map((_, pIdx) => (
               <div key={`cell-${rIdx}-${dIdx}-${pIdx}`} 
                    className={cellClass} 
-                   style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: rIdx + 3 }} />
+                   style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: rIdx + 4 }} />
             ));
           })
         )}
         {dateHeaders}
         {periodHeaders}
+        {eventLabel}
+        {eventCells}
+        {holidayItems}
+        {scheduleEventItems}
         {resourceLabels}
         {lessonItems}
       </div>
