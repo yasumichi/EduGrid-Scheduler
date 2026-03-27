@@ -24,7 +24,7 @@ CREATE DATABASE edugrid OWNER edugrid;
 
 ## 3. 環境変数の設定 (Environment Variables)
 
-バックエンドディレクトリに `.env` ファイルを作成し、接続情報を記述します。
+バックエンドディレクトリに `.env` ファイルを作成し、接続情報と認証キーを記述します。
 
 1. `backend/.env` を作成:
    ```bash
@@ -35,6 +35,7 @@ CREATE DATABASE edugrid OWNER edugrid;
    ```env
    DATABASE_URL="postgresql://edugrid:password@localhost:5432/edugrid?schema=public"
    PORT=3001
+   JWT_SECRET="任意のリテラル文字列（例: your_secret_key_12345）"
    ```
 
 ## 4. 依存関係のインストール (Installation)
@@ -45,7 +46,7 @@ CREATE DATABASE edugrid OWNER edugrid;
 # ルートの依存関係 (Vite, concurrently 等)
 npm install
 
-# バックエンドの依存関係 (Express, Prisma 等)
+# バックエンドの依存関係 (Express, Prisma, Auth 等)
 cd backend
 npm install
 cd ..
@@ -53,7 +54,7 @@ cd ..
 
 ## 5. データベースの初期化とシード (DB Initialization)
 
-Prisma を使用してテーブルを作成し、初期テストデータを投入します。
+Prisma を使用してテーブルを作成し、初期テストデータ（ユーザー含む）を投入します。
 
 ```bash
 cd backend
@@ -79,12 +80,21 @@ npm run dev
 - **フロントエンド:** `http://localhost:5173`
 - **バックエンド API:** `http://localhost:3001`
 
-起動後、ブラウザで `http://localhost:5173` にアクセスし、データが表示されていれば成功です。
+## 7. テスト用ログイン情報 (Test Credentials)
+
+起動後、以下の情報でログインして動作を確認できます。
+
+- **管理者 (Admin):**
+  - Email: `admin@example.com`
+  - Password: `admin123`
+- **講師 (Teacher):**
+  - Email: `teacher@example.com`
+  - Password: `teacher123`
 
 ---
 
 ## トラブルシューティング
 
 - **データベース接続エラー:** `backend/.env` の `DATABASE_URL` が正しいか確認してください。
+- **JWTエラー:** `backend/.env` に `JWT_SECRET` が設定されているか確認してください。
 - **Prisma エラー:** `cd backend && npx prisma generate` を実行してクライアントを再生成してみてください。
-- **ポート競合:** 3001 または 5173 ポートが他で使用されていないか確認してください。
