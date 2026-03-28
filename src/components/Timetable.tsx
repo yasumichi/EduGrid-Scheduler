@@ -349,7 +349,11 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
 
   return (
     <div className="timetable-wrapper">
-      <div className="timetable-container" style={gridStyle}>
+      <div 
+        key={`${viewType}-${baseDate.toISOString()}-${viewMode}-${filteredResources.length}`}
+        className="timetable-container" 
+        style={gridStyle}
+      >
         <div className="grid-corner" style={{ gridColumn: 1, gridRow: "1 / span 2" }} />
         {filteredResources.map((_, rIdx) => 
           displayDates.map((date, dIdx) => {
