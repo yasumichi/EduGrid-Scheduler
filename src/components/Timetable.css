@@ -27,6 +27,8 @@
 .timetable-container {
   background-color: #333;
   display: grid;
+  width: fit-content;
+  min-width: 100%;
 }
 
 /* 左上の交差点 (常に最前面：z-index: 30) */

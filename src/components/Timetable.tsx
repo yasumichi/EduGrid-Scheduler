@@ -58,13 +58,21 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     .filter(r => r.type === viewMode)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  const colWidth = viewType === 'day' ? '60px' : '50px';
+  const colWidthNum = viewType === 'day' ? 60 : 50;
+  const colWidth = `${colWidthNum}px`;
+  const totalCols = displayDates.length * periods.length;
+  const totalWidth = 150 + totalCols * colWidthNum;
+
   const gridStyle = {
     '--col-width': colWidth,
     display: 'grid',
-    gridTemplateColumns: `150px repeat(${displayDates.length * periods.length}, minmax(${colWidth}, 1fr))`,
-    gridTemplateRows: `40px 30px 80px repeat(${filteredResources.length}, 80px)`,
+    width: '100%',
+    minWidth: `${totalWidth}px`,
+    gridTemplateColumns: `150px repeat(${totalCols}, ${colWidth})`,
+    gridTemplateRows: `40px 30px 80px repeat(${filteredResources.length || 0}, 80px)`,
   } as React.CSSProperties;
+
+  const stickyLeft = { position: 'sticky', left: 0, zIndex: 25 } as React.CSSProperties;
 
   const dateHeaders = displayDates.map((date, dIdx) => {
     const holiday = getHoliday(date);
@@ -110,7 +118,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
   );
 
   const eventLabel = (
-    <div key="label-event" className="event-label" style={{ gridColumn: 1, gridRow: 3 }}>
+    <div key="label-event" className="event-label" style={{ ...stickyLeft, gridColumn: 1, gridRow: 3 }}>
       {labels.event}
     </div>
   );
@@ -269,7 +277,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
   });
 
   const resourceLabels = filteredResources.map((r, idx) => (
-    <div key={`label-${r.id}`} className="grid-label" style={{ gridColumn: 1, gridRow: idx + 4 }}>
+    <div key={`label-${r.id}`} className="grid-label" style={{ ...stickyLeft, gridColumn: 1, gridRow: idx + 4 }}>
       {r.name}
     </div>
   ));
@@ -354,7 +362,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         className="timetable-container" 
         style={gridStyle}
       >
-        <div className="grid-corner" style={{ gridColumn: 1, gridRow: "1 / span 2" }} />
+        <div className="grid-corner" style={{ ...stickyLeft, gridColumn: 1, gridRow: "1 / span 2", zIndex: 30 }} />
         {filteredResources.map((_, rIdx) => 
           displayDates.map((date, dIdx) => {
             const isSun = date.getDay() === 0;
@@ -377,14 +385,6 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         {eventCells}
         {/* レベル別の配置を確保 */}
         {holidayItems}
-        {scheduleEventItems}
-        {resourceLabels}
-        {lessonItems}
-      </div>
-    </div>
-  );
-}
-    {holidayItems}
         {scheduleEventItems}
         {resourceLabels}
         {lessonItems}
