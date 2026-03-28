@@ -10,6 +10,7 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
+  resourceId?: string; // 対応する講師リソース等
 }
 
 export interface AuthResponse {
@@ -22,6 +23,8 @@ export interface ResourceLabels {
   teacher: string;
   course: string;
   event: string;
+  mainTeacher: string;
+  subTeacher: string;
 }
 
 export interface Resource {
@@ -29,6 +32,7 @@ export interface Resource {
   name: string;
   type: ResourceType;
   order?: number;
+  userId?: string; // 紐付けられたユーザーID
 }
 
 export interface ScheduleEvent {
@@ -39,12 +43,17 @@ export interface ScheduleEvent {
   endDate: string;
   endPeriodId: string;
   color?: string;
+  resourceIds?: string[]; // 紐付けられたリソースID（講師、教室など）
+  resources?: { id: string }[]; // バックエンドからのリレーション
+  showInEventRow?: boolean; // イベント行（最上部）に表示するかどうか
 }
 
 export interface Lesson {
   id: string;
   subject: string;
   teacherId: string;
+  subTeacherIds?: string[]; // サブ講師
+  subTeachers?: { id: string }[]; // バックエンドからのリレーション
   roomId: string;
   courseId: string;
   startDate: string;   // 開始日 "2026-03-26"
@@ -112,11 +121,26 @@ const generateLessons = (): Lesson[] => {
     });
   }
 
-  // 日を跨ぐ集中講義 (2026-03-26 1限 〜 2026-03-27 4限)
+  // 複数サブ講師のテストデータ
+  lessons.push({
+    id: 'l-multi-sub',
+    subject: 'チームティーチング:総合探究',
+    teacherId: 't1', // 佐藤先生
+    subTeacherIds: ['t2', 't3'], // 鈴木先生, 高橋先生
+    roomId: 'r1',
+    courseId: 'c1',
+    startDate: '2026-03-26',
+    startPeriodId: 'p3',
+    endDate: '2026-03-26',
+    endPeriodId: 'p4'
+  });
+
+  // 日を跨ぐ集中講義
   lessons.push({
     id: 'l-special',
     subject: '集中講義:多文化共生',
     teacherId: 't5',
+    subTeacherIds: ['t1', 't2'],
     roomId: 'r5',
     courseId: 'c20',
     startDate: '2026-03-26',
@@ -125,22 +149,6 @@ const generateLessons = (): Lesson[] => {
     endPeriodId: 'p4'
   });
 
-  // 2026年4月のテストデータ
-  const aprilDate = '2026-04-06';
-  for (let i = 1; i <= 10; i++) {
-    lessons.push({
-      id: `l-apr-${i}`,
-      subject: subjects[i % subjects.length],
-      teacherId: `t${i}`,
-      roomId: `r${i}`,
-      courseId: `c${i}`,
-      startDate: aprilDate,
-      startPeriodId: `p${i % 8 + 1}`,
-      endDate: aprilDate,
-      endPeriodId: `p${i % 8 + 1}`
-    });
-  }
-
   return lessons;
 };
 
@@ -148,40 +156,36 @@ export const MOCK_LESSONS = generateLessons();
 
 export const MOCK_EVENTS: ScheduleEvent[] = [
   {
-    id: 'e1',
-    name: '校内清掃',
+    id: 'e-global-only',
+    name: '全館避難訓練',
     startDate: '2026-03-26',
-    startPeriodId: 'p7',
+    startPeriodId: 'p5',
+    endDate: '2026-03-26',
+    endPeriodId: 'p6',
+    color: '#fee2e2',
+    showInEventRow: true // イベント行のみ（resourceIdsなし）
+  },
+  {
+    id: 'e-resource-only',
+    name: '出張（学会参加）',
+    startDate: '2026-03-26',
+    startPeriodId: 'p1',
     endDate: '2026-03-26',
     endPeriodId: 'p8',
-    color: '#e2e8f0'
+    color: '#d1fae5',
+    resourceIds: ['t10'], // 加藤先生のみ
+    showInEventRow: false // イベント行には出さない
   },
   {
-    id: 'e2',
-    name: '三者面談期間',
-    startDate: '2026-03-24',
-    startPeriodId: 'p1',
+    id: 'e-both',
+    name: '研究授業（公開）',
+    startDate: '2026-03-26',
+    startPeriodId: 'p2',
     endDate: '2026-03-26',
-    endPeriodId: 'p8',
-    color: '#fef3c7'
-  },
-  {
-    id: 'e-apr-1',
-    name: '入学式',
-    startDate: '2026-04-06',
-    startPeriodId: 'p1',
-    endDate: '2026-04-06',
-    endPeriodId: 'p8',
-    color: '#fee2e2'
-  },
-  {
-    id: 'e-apr-2',
-    name: 'オリエンテーション期間',
-    startDate: '2026-04-07',
-    startPeriodId: 'p1',
-    endDate: '2026-04-10',
-    endPeriodId: 'p8',
-    color: '#f0f9ff'
+    endPeriodId: 'p3',
+    color: '#fef3c7',
+    resourceIds: ['t4', 'r4'], // 田中先生、104号室
+    showInEventRow: true // 両方に表示
   }
 ];
 

@@ -98,3 +98,68 @@ npm run dev
 - **データベース接続エラー:** `backend/.env` の `DATABASE_URL` が正しいか確認してください。
 - **JWTエラー:** `backend/.env` に `JWT_SECRET` が設定されているか確認してください。
 - **Prisma エラー:** `cd backend && npx prisma generate` を実行してクライアントを再生成してみてください。
+
+---
+
+## 8. 外部アドレスでの公開 (External Deployment)
+
+フロントエンドとバックエンドを異なるアドレス（またはドメイン）で公開する場合の設定手順。
+
+### 1. バックエンドの環境変数設定
+バックエンドの `.env` で `DATABASE_URL` 以外に、JWTのシークレット等を設定。
+```bash
+# backend/.env
+JWT_SECRET=your_secure_random_string
+PORT=3001
+```
+
+### 2. フロントエンドのAPIエンドポイント設定
+フロントエンドの `src/App.tsx` 等でバックエンドの外部URLを指定。
+※本番環境では `import.meta.env.VITE_API_URL` などの環境変数を使用するのが推奨されます。
+
+```typescript
+// src/App.tsx
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://api.yourdomain.com/api';
+```
+
+Vite の環境変数はルートの `.env.production` で定義します。
+```bash
+# .env.production
+VITE_API_URL=https://api.yourdomain.com/api
+```
+
+### 3. CORS設定
+バックエンドの `backend/src/index.ts` で、フロントエンドの公開ドメインからのアクセスを許可。
+```typescript
+app.use(cors({
+  origin: 'https://www.yourdomain.com'
+}));
+```
+
+### 4. ビルドと実行
+#### バックエンド (Node.js/TypeScript)
+```bash
+cd backend
+npm run build
+npm start
+```
+
+#### フロントエンド (Vite)
+```bash
+# ビルド (dist ディレクトリに出力)
+npm run build
+# dist 内の静的ファイルを Nginx や S3/CloudFront 等で公開
+```
+
+### 5. リバースプロキシの設定 (例: Nginx)
+```nginx
+server {
+    listen 443 ssl;
+    server_name www.yourdomain.com;
+    root /var/www/edugrid/dist;
+    index index.html;
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```

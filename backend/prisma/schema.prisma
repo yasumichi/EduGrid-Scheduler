@@ -27,6 +27,9 @@ model User {
   email    String   @unique
   password String
   role     UserRole @default(STUDENT)
+
+  // 講師ユーザーの場合、対応するリソース
+  resource Resource? @relation("UserResource")
 }
 
 model Resource {
@@ -35,10 +38,18 @@ model Resource {
   type  ResourceType
   order Int          @default(0)
 
-  // 関連付け (任意)
+  // 講師ユーザーとの紐付け
+  userId String? @unique
+  user   User?   @relation("UserResource", fields: [userId], references: [id])
+
+  // 関連付け
   lessonsAsRoom    Lesson[] @relation("RoomLessons")
-  lessonsAsTeacher Lesson[] @relation("TeacherLessons")
+  lessonsAsTeacher Lesson[] @relation("TeacherLessons") // メイン講師
+  lessonsAsSub     Lesson[] @relation("SubTeacherLessons") // サブ講師
   lessonsAsCourse  Lesson[] @relation("CourseLessons")
+
+  // 個別の予定
+  events ScheduleEvent[] @relation("ResourceEvents")
 }
 
 model Lesson {
@@ -56,6 +67,9 @@ model Lesson {
   room    Resource @relation("RoomLessons", fields: [roomId], references: [id])
   teacher Resource @relation("TeacherLessons", fields: [teacherId], references: [id])
   course  Resource @relation("CourseLessons", fields: [courseId], references: [id])
+
+  // サブ講師
+  subTeachers Resource[] @relation("SubTeacherLessons")
 }
 
 model ScheduleEvent {
@@ -66,6 +80,11 @@ model ScheduleEvent {
   endDate       String
   endPeriodId   String
   color         String?
+  showInEventRow Boolean @default(true)
+
+  // 紐付け先リソース（講師、教室など）
+  // 紐付けがない場合は全体のイベント（祝日、行事など）として扱う
+  resources Resource[] @relation("ResourceEvents")
 }
 
 model Holiday {

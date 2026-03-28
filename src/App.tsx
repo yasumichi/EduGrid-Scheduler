@@ -27,7 +27,9 @@ export function App() {
     room: '教室',
     teacher: '講師',
     course: '講座',
-    event: 'イベント'
+    event: 'イベント',
+    mainTeacher: 'メイン',
+    subTeacher: 'サブ'
   });
 
   // 初期化時にlocalStorageからセッション復元

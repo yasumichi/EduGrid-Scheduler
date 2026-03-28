@@ -78,7 +78,13 @@ app.get('/api/resources', verifyToken, async (req, res) => {
 // 授業一覧取得 (認証必須)
 app.get('/api/lessons', verifyToken, async (req, res) => {
   try {
-    const lessons = await prisma.lesson.findMany();
+    const lessons = await prisma.lesson.findMany({
+      include: {
+        subTeachers: {
+          select: { id: true }
+        }
+      }
+    });
     res.json(lessons);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch lessons' });
@@ -88,7 +94,13 @@ app.get('/api/lessons', verifyToken, async (req, res) => {
 // イベント一覧取得 (認証必須)
 app.get('/api/events', verifyToken, async (req, res) => {
   try {
-    const events = await prisma.scheduleEvent.findMany();
+    const events = await prisma.scheduleEvent.findMany({
+      include: {
+        resources: {
+          select: { id: true }
+        }
+      }
+    });
     res.json(events);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch events' });

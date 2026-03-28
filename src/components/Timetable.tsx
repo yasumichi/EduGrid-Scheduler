@@ -22,10 +22,12 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     return resources.find(r => r.id === id)?.name || id;
   };
 
+  const currentViewStart = startOfDay(baseDate);
+
   const getHoliday = (date: Date) => {
     const target = startOfDay(date);
     return holidays.find(h => {
-      if (h.date) return isSameDay(target, parseISO(h.date));
+      if (h.date) return isSameDay(target, startOfDay(parseISO(h.date)));
       if (h.start && h.end) {
         const start = startOfDay(parseISO(h.start));
         const end = startOfDay(parseISO(h.end));
@@ -49,7 +51,8 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
   };
 
   const dayCount = getDayCount();
-  const displayDates = Array.from({ length: dayCount }).map((_, i) => addDays(baseDate, i));
+  const displayDates = Array.from({ length: dayCount }).map((_, i) => addDays(currentViewStart, i));
+  const currentViewEnd = startOfDay(displayDates[displayDates.length - 1]);
 
   const filteredResources = resources
     .filter(r => r.type === viewMode)
@@ -127,28 +130,44 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     ));
   });
 
-  const holidayItems = displayDates.map((date, dIdx) => {
-    const holiday = getHoliday(date);
-    if (!holiday) return null;
+  // イベント行（row 3）に表示する全アイテムの競合チェック
+  type Placement = { id: string; start: number; end: number; level: number; element: JSX.Element };
+  const row3Placements: Placement[] = [];
 
-    // 期間休暇の場合、表示範囲内での開始と終了を考慮する必要があるが、
-    // ここでは簡易的に単一日の表示または期間の重なりを表示
-    // 実際には holiday.start/end がある場合、複数セルをスパンさせるのが望ましい
-    
-    // とりあえず単一日の祝日表示
-    if (holiday.date && isSameDay(date, parseISO(holiday.date))) {
-      return (
+  const getPlacementLevel = (start: number, end: number) => {
+    let level = 0;
+    while (true) {
+      const conflict = row3Placements.some(p => p.level === level && !(end < p.start || start > p.end));
+      if (!conflict) return level;
+      level++;
+    }
+  };
+
+  const holidayItems = displayDates.flatMap((date, dIdx) => {
+    const holiday = getHoliday(date);
+    if (!holiday) return [];
+
+    if (holiday.date && isSameDay(date, startOfDay(parseISO(holiday.date)))) {
+      const startCol = dIdx * periods.length + 2;
+      const endCol = dIdx * periods.length + periods.length + 1;
+      const level = getPlacementLevel(startCol, endCol - 1);
+      const el = (
         <div key={`holiday-${date.toISOString()}`}
              className="event-card holiday-card"
-             style={{ gridColumn: `${dIdx * periods.length + 2} / span ${periods.length}`, gridRow: 3 }}>
+             style={{ 
+               gridColumn: `${startCol} / ${endCol}`, 
+               gridRow: 3,
+               top: `${72 + level * 22}px`
+             }}>
           {holiday.name}
         </div>
       );
+      row3Placements.push({ id: `holiday-${date.toISOString()}`, start: startCol, end: endCol - 1, level, element: el });
+      return [el];
     }
     
-    // 期間休暇の開始日、または表示範囲の開始日に描画
-    const hStart = holiday.start ? parseISO(holiday.start) : null;
-    const hEnd = holiday.end ? parseISO(holiday.end) : null;
+    const hStart = holiday.start ? startOfDay(parseISO(holiday.start)) : null;
+    const hEnd = holiday.end ? startOfDay(parseISO(holiday.end)) : null;
     
     if (hStart && hEnd) {
       if (isSameDay(date, hStart) || (isSameDay(date, displayDates[0]) && isAfter(date, hStart) && isBefore(date, hEnd))) {
@@ -161,52 +180,91 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         if (sIdx !== -1 && eIdx !== -1 && isSameDay(date, actualStart)) {
           const startCol = sIdx * periods.length + 2;
           const endCol = eIdx * periods.length + periods.length + 1;
-          return (
+          const level = getPlacementLevel(startCol, endCol - 1);
+          const el = (
             <div key={`holiday-range-${holiday.name}-${date.toISOString()}`}
                  className="event-card holiday-card"
-                 style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 3 }}>
+                 style={{ 
+                   gridColumn: `${startCol} / ${endCol}`, 
+                   gridRow: 3,
+                   top: `${72 + level * 22}px`
+                 }}>
               {holiday.name}
             </div>
           );
+          row3Placements.push({ id: `holiday-range-${holiday.name}`, start: startCol, end: endCol - 1, level, element: el });
+          return [el];
         }
       }
     }
     
-    return null;
+    return [];
   });
 
-  const scheduleEventItems = events.filter(e => {
-    const eStart = parseISO(e.startDate);
-    const eEnd = parseISO(e.endDate);
-    const viewStart = displayDates[0];
-    const viewEnd = displayDates[displayDates.length - 1];
-    return !(isAfter(eStart, viewEnd) || isBefore(eEnd, viewStart));
-  }).map(e => {
-    const eStart = parseISO(e.startDate);
-    const eEnd = parseISO(e.endDate);
+  const scheduleEventItems = events.flatMap(e => {
+    const eStart = startOfDay(parseISO(e.startDate));
+    const eEnd = startOfDay(parseISO(e.endDate));
     
+    if (isAfter(eStart, currentViewEnd) || isBefore(eEnd, currentViewStart)) return [];
+
     const startDayIdx = displayDates.findIndex(d => isSameDay(d, eStart));
     const endDayIdx = displayDates.findIndex(d => isSameDay(d, eEnd));
     const startPeriodIdx = periods.findIndex(p => p.id === e.startPeriodId);
     const endPeriodIdx = periods.findIndex(p => p.id === e.endPeriodId);
 
-    if (startDayIdx === -1 || endDayIdx === -1) return null;
+    // ビュー外でも一部が掛かっている場合の調整
+    const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
+    const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
+    const span = eCol - sCol + 1;
 
-    const startCol = startDayIdx * periods.length + startPeriodIdx + 2;
-    const endCol = endDayIdx * periods.length + endPeriodIdx + 2;
-    const span = endCol - startCol + 1;
+    const result = [];
+    
+    // リソースIDのリストを統合
+    const resourceIdList = [
+      ...(e.resourceIds || []),
+      ...(e.resources || []).map(r => r.id)
+    ];
 
-    return (
-      <div key={`event-${e.id}`} 
-           className="event-card schedule-event-card"
-           style={{ 
-             gridColumn: `${startCol} / span ${span}`, 
-             gridRow: 3,
-             backgroundColor: e.color
-           }}>
-        {e.name}
-      </div>
-    );
+    // リソース固有の予定
+    if (resourceIdList.length > 0) {
+      resourceIdList.forEach(resId => {
+        const resourceIdx = filteredResources.findIndex(r => r.id === resId);
+        if (resourceIdx !== -1) {
+          result.push(
+            <div key={`event-${e.id}-${resId}`} 
+                 className="event-card schedule-event-card"
+                 style={{ 
+                   gridColumn: `${sCol} / span ${span}`, 
+                   gridRow: resourceIdx + 4,
+                   backgroundColor: e.color
+                 }}>
+              {e.name}
+            </div>
+          );
+        }
+      });
+    }
+
+    // イベント行（row 3）に表示する場合
+    if (e.showInEventRow !== false || resourceIdList.length === 0) {
+      const level = getPlacementLevel(sCol, sCol + span - 1);
+      const el = (
+        <div key={`event-${e.id}-global`} 
+             className="event-card schedule-event-card"
+             style={{ 
+               gridColumn: `${sCol} / span ${span}`, 
+               gridRow: 3,
+               backgroundColor: e.color,
+               top: `${72 + level * 22}px`
+             }}>
+          {e.name}
+        </div>
+      );
+      row3Placements.push({ id: `event-${e.id}`, start: sCol, end: sCol + span - 1, level, element: el });
+      result.push(el);
+    }
+
+    return result;
   });
 
   const resourceLabels = filteredResources.map((r, idx) => (
@@ -215,64 +273,77 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     </div>
   ));
 
-  const lessonItems = lessons.filter(l => {
-    const resId = viewMode === 'room' ? l.roomId : viewMode === 'teacher' ? l.teacherId : l.courseId;
-    const resMatch = filteredResources.some(r => r.id === resId);
-    if (!resMatch) return false;
+  const lessonItems = lessons.flatMap(l => {
+    const lStart = startOfDay(parseISO(l.startDate));
+    const lEnd = startOfDay(parseISO(l.endDate));
 
-    const lStart = parseISO(l.startDate);
-    const lEnd = parseISO(l.endDate);
-    const viewStart = displayDates[0];
-    const viewEnd = displayDates[displayDates.length - 1];
-
-    return !(isAfter(lStart, viewEnd) || isBefore(lEnd, viewStart));
-  }).map(l => {
-    const lStart = parseISO(l.startDate);
-    const lEnd = parseISO(l.endDate);
+    if (isAfter(lStart, currentViewEnd) || isBefore(lEnd, currentViewStart)) return [];
     
     const startDayIdx = displayDates.findIndex(d => isSameDay(d, lStart));
     const endDayIdx = displayDates.findIndex(d => isSameDay(d, lEnd));
     const startPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
     const endPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
 
-    if (startDayIdx === -1 || endDayIdx === -1) return null;
+    const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
+    const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
+    const span = eCol - sCol + 1;
 
-    const resourceIdx = filteredResources.findIndex(r => {
-      const resId = viewMode === 'room' ? l.roomId : viewMode === 'teacher' ? l.teacherId : l.courseId;
-      return r.id === resId;
-    });
-    if (resourceIdx === -1) return null;
+    const subIds = [
+      ...(l.subTeacherIds || []),
+      ...(l.subTeachers || []).map(t => t.id)
+    ];
 
-    const startCol = startDayIdx * periods.length + startPeriodIdx + 2;
-    const endCol = endDayIdx * periods.length + endPeriodIdx + 2;
-    const span = endCol - startCol + 1;
+    // 関連するリソースIDを特定
+    let targetResIds: string[] = [];
+    if (viewMode === 'room') targetResIds = [l.roomId];
+    else if (viewMode === 'teacher') targetResIds = [l.teacherId, ...subIds];
+    else if (viewMode === 'course') targetResIds = [l.courseId];
 
-    const infoItems = [];
-    if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
-    if (viewMode !== 'teacher') infoItems.push({ label: labels.teacher, value: getResourceName(l.teacherId) });
-    if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
-    const tooltipText = `${l.subject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
+    return targetResIds.map(resId => {
+      const resourceIdx = filteredResources.findIndex(r => r.id === resId);
+      if (resourceIdx === -1) return null;
 
-    return (
-      <div 
-        key={`lesson-${l.id}`} 
-        className="lesson-card"
-        style={{
-          gridColumn: `${startCol} / span ${span}`,
-          gridRow: resourceIdx + 4
-        }}
-        title={tooltipText}
-      >
-        <div className="lesson-subject">{l.subject}</div>
-        <div className="lesson-details">
-          {infoItems.map((item, idx) => (
-            <div key={idx} className="lesson-info">
-              {item.label}: {item.value}
-            </div>
-          ))}
+      const infoItems = [];
+      if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
+      
+      const mainTeacherName = getResourceName(l.teacherId);
+      const subTeacherNames = subIds.map(id => getResourceName(id));
+      
+      if (viewMode !== 'teacher') {
+        const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+        infoItems.push({ label: labels.teacher, value: allTeachers });
+      } else {
+        if (subTeacherNames.length > 0) {
+          // メイン・サブ講師を分けずに表示（同等に扱う）
+          const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+          infoItems.push({ label: labels.teacher, value: allTeachers });
+        }
+      }
+
+      if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
+      const tooltipText = `${l.subject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
+
+      return (
+        <div 
+          key={`lesson-${l.id}-${resId}`} 
+          className="lesson-card"
+          style={{
+            gridColumn: `${sCol} / span ${span}`,
+            gridRow: resourceIdx + 4
+          }}
+          title={tooltipText}
+        >
+          <div className="lesson-subject">{l.subject}</div>
+          <div className="lesson-details">
+            {infoItems.map((item, idx) => (
+              <div key={idx} className="lesson-info">
+                {item.label}: {item.value}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }).filter(Boolean);
   });
 
   return (
@@ -299,6 +370,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         {periodHeaders}
         {eventLabel}
         {eventCells}
+        {/* レベル別の配置を確保 */}
         {holidayItems}
         {scheduleEventItems}
         {resourceLabels}
