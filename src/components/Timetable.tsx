@@ -58,16 +58,17 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     .filter(r => r.type === viewMode)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  const colWidthNum = viewType === 'day' ? 60 : 50;
-  const colWidth = `${colWidthNum}px`;
+  const isDayView = viewType === 'day';
+  const colWidthNum = isDayView ? 60 : 50;
+  const colWidth = isDayView ? '1fr' : `${colWidthNum}px`;
   const totalCols = displayDates.length * periods.length;
   const totalWidth = 150 + totalCols * colWidthNum;
 
   const gridStyle = {
-    '--col-width': colWidth,
+    '--col-width': isDayView ? 'auto' : colWidth,
     display: 'grid',
-    width: '100%',
-    minWidth: `${totalWidth}px`,
+    width: isDayView ? '100%' : 'fit-content',
+    minWidth: isDayView ? '0' : `${totalWidth}px`,
     gridTemplateColumns: `150px repeat(${totalCols}, ${colWidth})`,
     gridTemplateRows: `40px 30px 80px repeat(${filteredResources.length || 0}, 80px)`,
   } as React.CSSProperties;
@@ -355,8 +356,12 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     }).filter(Boolean);
   });
 
+  const wrapperStyle = {
+    overflowX: isDayView ? 'hidden' : 'auto'
+  } as React.CSSProperties;
+
   return (
-    <div className="timetable-wrapper">
+    <div className="timetable-wrapper" style={wrapperStyle}>
       <div 
         key={`grid-${viewType}-${baseDate.getTime()}-${viewMode}-${filteredResources.length}-${totalCols}`}
         className="timetable-container" 
