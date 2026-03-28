@@ -58,7 +58,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     .filter(r => r.type === viewMode)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  const colWidth = '60px';
+  const colWidth = viewType === 'day' ? '60px' : '50px';
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: `150px repeat(${displayDates.length * periods.length}, minmax(${colWidth}, 1fr))`,
