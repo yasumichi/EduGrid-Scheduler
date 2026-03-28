@@ -114,22 +114,24 @@ PORT=3001
 ```
 
 ### 2. フロントエンドのAPIエンドポイント設定
-フロントエンドの `src/App.tsx` 等でバックエンドの外部URLを指定。
-※本番環境では `import.meta.env.VITE_API_URL` などの環境変数を使用するのが推奨されます。
+フロントエンドは、環境変数 `VITE_API_URL` を使用してバックエンドのURLを切り替えます。
+ソースコード (`src/App.tsx`) を直接修正する必要はありません。
 
-```typescript
-// src/App.tsx
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://api.yourdomain.com/api';
-```
+開発時や特定のデプロイ環境に合わせて、プロジェクトルートに以下のファイルを作成または修正してください。
 
-Vite の環境変数はルートの `.env.production` で定義します。
 ```bash
-# .env.production
+# .env.local (ローカル開発時の上書き用)
+VITE_API_URL=http://localhost:3001/api
+
+# .env.production (本番ビルド npm run build 用)
 VITE_API_URL=https://api.yourdomain.com/api
 ```
 
+Vite はビルド時にこれらのファイルを読み込み、`import.meta.env.VITE_API_URL` に値を埋め込みます。
+
 ### 3. CORS設定
-バックエンドの `backend/src/index.ts` で、フロントエンドの公開ドメインからのアクセスを許可。
+バックエンドの `backend/src/index.ts` で、フロントエンドの公開ドメインからのアクセスを許可します。
+※将来的に、バックエンドも環境変数から許可リストを読み込むように修正可能です。
 ```typescript
 app.use(cors({
   origin: 'https://www.yourdomain.com'

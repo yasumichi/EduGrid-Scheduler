@@ -5,7 +5,7 @@ import { Login } from './components/Login';
 import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, DEFAULT_PERIODS, Holiday, ResourceLabels, User, AuthResponse } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
-const BACKEND_URL = 'http://localhost:3001/api';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export function App() {
   const viewMode = useSignal<ResourceType>('room');
