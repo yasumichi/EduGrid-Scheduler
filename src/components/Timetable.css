@@ -61,6 +61,10 @@
   top: 0;
   z-index: 20;
   font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 
 /* 時限ヘッダー (z-index: 19) */
@@ -76,6 +80,10 @@
   position: sticky;
   top: 40px; /* date-header の高さ */
   z-index: 19;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 
 /* イベント行ラベル (z-index: 25) */
