@@ -48,7 +48,11 @@ h1 {
   color: #aaa;
 }
 
-.logout-button {
+.settings-container {
+  position: relative;
+}
+
+.settings-button, .logout-button {
   background-color: transparent;
   border: 1px solid #444;
   color: #ccc;
@@ -59,9 +63,40 @@ h1 {
   transition: all 0.2s;
 }
 
-.logout-button:hover {
+.settings-button:hover, .logout-button:hover {
   background-color: #333;
   border-color: #666;
+  color: #fff;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 5px;
+  background-color: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 150px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: #ccc;
+  text-align: left;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #444;
   color: #fff;
 }
 

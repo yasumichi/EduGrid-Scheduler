@@ -18,6 +18,7 @@ export function App() {
   const periods = useSignal<TimePeriod[]>([]);
   const isHolidayMode = useSignal<boolean>(false);
   const showPeriodManager = useSignal<boolean>(false);
+  const showSettingsDropdown = useSignal<boolean>(false);
   const resources = useSignal<Resource[]>([]);
   const lessons = useSignal<Lesson[]>([]);
   const events = useSignal<ScheduleEvent[]>([]);
@@ -162,9 +163,27 @@ export function App() {
           {user.value && (
             <div className="user-info">
               {user.value.role === 'ADMIN' && (
-                <button className="settings-button" onClick={() => showPeriodManager.value = true}>
-                  {t('Settings')}
-                </button>
+                <div className="settings-container">
+                  <button 
+                    className="settings-button" 
+                    onClick={() => showSettingsDropdown.value = !showSettingsDropdown.value}
+                  >
+                    {t('Settings')}
+                  </button>
+                  {showSettingsDropdown.value && (
+                    <div className="settings-dropdown">
+                      <button 
+                        className="dropdown-item" 
+                        onClick={() => {
+                          showPeriodManager.value = true;
+                          showSettingsDropdown.value = false;
+                        }}
+                      >
+                        {t('Manage Periods')}
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
               <span className="user-email">{user.value.email} ({user.value.role})</span>
               <button className="logout-button" onClick={handleLogout}>{t('Sign Out')}</button>
