@@ -1,4 +1,4 @@
-# EduGrid Scheduler (Resource Scheduler)
+# Education Scheduler (Resource Scheduler)
 
 教育施設のリソース（教室・講師・講座）管理に特化したカレンダーサービス
 
