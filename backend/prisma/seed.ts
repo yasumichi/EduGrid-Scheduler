@@ -10,6 +10,7 @@ async function main() {
   await prisma.lesson.deleteMany();
   await prisma.resource.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.timePeriod.deleteMany();
 
   console.log('Clearing database...');
 
@@ -34,6 +35,24 @@ async function main() {
   });
 
   console.log('Seeding users...');
+
+  // 時限の生成
+  const periods = [
+    { id: 'p1', name: '1st Period', startTime: '09:00', endTime: '09:50', order: 1 },
+    { id: 'p2', name: '2nd Period', startTime: '10:00', endTime: '10:50', order: 2 },
+    { id: 'p3', name: '3rd Period', startTime: '11:00', endTime: '11:50', order: 3 },
+    { id: 'p4', name: '4th Period', startTime: '12:00', endTime: '12:50', order: 4 },
+    { id: 'p5', name: '5th Period', startTime: '13:50', endTime: '14:40', order: 5 },
+    { id: 'p6', name: '6th Period', startTime: '14:50', endTime: '15:40', order: 6 },
+    { id: 'p7', name: '7th Period', startTime: '15:50', endTime: '16:40', order: 7 },
+    { id: 'p8', name: '8th Period', startTime: '16:50', endTime: '17:40', order: 8 },
+  ];
+
+  for (const p of periods) {
+    await prisma.timePeriod.create({ data: p });
+  }
+
+  console.log('Seeding time periods...');
 
   // リソースの生成
   // Rooms

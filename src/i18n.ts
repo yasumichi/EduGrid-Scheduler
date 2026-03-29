@@ -23,7 +23,16 @@ const resources = {
       "Course": "Course",
       "Event": "Event",
       "Main Teacher": "Main Teacher",
-      "Sub Teacher": "Sub Teacher"
+      "Sub Teacher": "Sub Teacher",
+      "Manage Periods": "Manage Periods",
+      "Back to Timetable": "Back to Timetable",
+      "Period Name": "Period Name",
+      "Start Time": "Start Time",
+      "End Time": "End Time",
+      "Add Period": "Add Period",
+      "Remove": "Remove",
+      "Save Changes": "Save Changes",
+      "Settings": "Settings"
     }
   },
   ja: {
@@ -47,6 +56,15 @@ const resources = {
       "Event": "行事",
       "Main Teacher": "メイン講師",
       "Sub Teacher": "サブ講師",
+      "Manage Periods": "時限設定",
+      "Back to Timetable": "スケジュールに戻る",
+      "Period Name": "時限名",
+      "Start Time": "開始時間",
+      "End Time": "終了時間",
+      "Add Period": "時限を追加",
+      "Remove": "削除",
+      "Save Changes": "設定を保存",
+      "Settings": "設定",
       "Period 1": "1限",
       "Period 2": "2限",
       "Period 3": "3限",

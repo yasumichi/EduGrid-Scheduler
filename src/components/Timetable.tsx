@@ -115,7 +115,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         <div key={`period-${date.toISOString()}-${p.id}`} 
              className={className} 
              style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: 2 }}>
-          {t(p.name)}
+          {p.name}
         </div>
       );
     })

@@ -120,6 +120,47 @@ app.get('/api/holidays', verifyToken, async (req, res) => {
   }
 });
 
+// 時限一覧取得 (認証必須)
+app.get('/api/periods', verifyToken, async (req, res) => {
+  try {
+    const periods = await prisma.timePeriod.findMany({
+      orderBy: { order: 'asc' }
+    });
+    res.json(periods);
+  } catch (error) {
+    console.error('Error fetching periods:', error);
+    res.status(500).json({ error: 'Failed to fetch time periods' });
+  }
+});
+
+// 時限の更新/作成 (ADMIN権限)
+app.post('/api/periods', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  }
+  const { periods } = req.body;
+  try {
+    // 既存の時限を全削除して再作成（単純化のため）
+    await prisma.$transaction([
+      prisma.timePeriod.deleteMany(),
+      prisma.timePeriod.createMany({
+        data: periods.map((p: any, idx: number) => ({
+          name: p.name,
+          startTime: p.startTime,
+          endTime: p.endTime,
+          order: idx + 1
+        }))
+      })
+    ]);
+    const newPeriods = await prisma.timePeriod.findMany({
+      orderBy: { order: 'asc' }
+    });
+    res.json(newPeriods);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update time periods' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
 });

@@ -1,6 +1,9 @@
 export interface TimePeriod {
   id: string;
   name: string;
+  startTime: string; // HH:mm
+  endTime: string;   // HH:mm
+  order: number;
 }
 
 export type ResourceType = 'room' | 'teacher' | 'course';
@@ -70,17 +73,6 @@ export interface Holiday {
   end?: string;
   name: string;
 }
-
-export const DEFAULT_PERIODS: TimePeriod[] = [
-  { id: 'p1', name: 'Period 1' },
-  { id: 'p2', name: 'Period 2' },
-  { id: 'p3', name: 'Period 3' },
-  { id: 'p4', name: 'Period 4' },
-  { id: 'p5', name: 'Period 5' },
-  { id: 'p6', name: 'Period 6' },
-  { id: 'p7', name: 'Period 7' },
-  { id: 'p8', name: 'Period 8' },
-];
 
 const generateResources = (): Resource[] => {
   const resources: Resource[] = [];

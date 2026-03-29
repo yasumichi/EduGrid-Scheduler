@@ -3,7 +3,8 @@ import { useEffect } from 'preact/hooks';
 import { useTranslation } from 'react-i18next';
 import { Timetable } from './components/Timetable';
 import { Login } from './components/Login';
-import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, DEFAULT_PERIODS, Holiday, ResourceLabels, User, AuthResponse } from './types';
+import { PeriodManager } from './components/PeriodManager';
+import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, Holiday, ResourceLabels, User, AuthResponse, TimePeriod } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -14,7 +15,9 @@ export function App() {
   const viewType = useSignal<ViewType>('day');
   const currentDate = useSignal<Date>(new Date('2026-03-26'));
   const holidays = useSignal<Holiday[]>([]);
+  const periods = useSignal<TimePeriod[]>([]);
   const isHolidayMode = useSignal<boolean>(false);
+  const showPeriodManager = useSignal<boolean>(false);
   const resources = useSignal<Resource[]>([]);
   const lessons = useSignal<Lesson[]>([]);
   const events = useSignal<ScheduleEvent[]>([]);
@@ -64,11 +67,12 @@ export function App() {
         'Authorization': `Bearer ${token.value}`
       };
       
-      const [resResources, resLessons, resEvents, resHolidays] = await Promise.all([
+      const [resResources, resLessons, resEvents, resHolidays, resPeriods] = await Promise.all([
         fetch(`${BACKEND_URL}/resources`, { headers }),
         fetch(`${BACKEND_URL}/lessons`, { headers }),
         fetch(`${BACKEND_URL}/events`, { headers }),
-        fetch(`${BACKEND_URL}/holidays`, { headers })
+        fetch(`${BACKEND_URL}/holidays`, { headers }),
+        fetch(`${BACKEND_URL}/periods`, { headers })
       ]);
 
       if (resResources.status === 401) {
@@ -80,6 +84,7 @@ export function App() {
       lessons.value = await resLessons.json();
       events.value = await resEvents.json();
       holidays.value = await resHolidays.json();
+      periods.value = await resPeriods.json();
     } catch (err) {
       console.error('Failed to fetch data from backend:', err);
     }
@@ -156,6 +161,11 @@ export function App() {
           <h1>EduGrid Scheduler</h1>
           {user.value && (
             <div className="user-info">
+              {user.value.role === 'ADMIN' && (
+                <button className="settings-button" onClick={() => showPeriodManager.value = true}>
+                  {t('Settings')}
+                </button>
+              )}
               <span className="user-email">{user.value.email} ({user.value.role})</span>
               <button className="logout-button" onClick={handleLogout}>{t('Sign Out')}</button>
             </div>
@@ -235,7 +245,7 @@ export function App() {
 
       <div className={`timetable-view ${isHolidayMode.value ? 'holiday-theme' : ''}`}>
         <Timetable 
-          periods={DEFAULT_PERIODS}
+          periods={periods.value}
           resources={resources.value}
           lessons={lessons.value}
           events={events.value}
@@ -246,6 +256,15 @@ export function App() {
           labels={resourceLabels.value}
         />
       </div>
+
+      {showPeriodManager.value && token.value && (
+        <PeriodManager 
+          token={token.value} 
+          backendUrl={BACKEND_URL} 
+          onClose={() => showPeriodManager.value = false}
+          onUpdate={(newPeriods) => periods.value = newPeriods}
+        />
+      )}
     </div>
   );
 }
