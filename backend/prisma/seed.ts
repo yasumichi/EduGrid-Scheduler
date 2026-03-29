@@ -39,16 +39,16 @@ async function main() {
   // Rooms
   for (let i = 1; i <= 20; i++) {
     await prisma.resource.create({
-      data: { id: `r${i}`, name: `${100 + i}号室`, type: 'room', order: i }
+      data: { id: `r${i}`, name: `Room ${100 + i}`, type: 'room', order: i }
     });
   }
   // Teachers
-  const surnames = ['佐藤', '鈴木', '高橋', '田中', '渡辺', '伊藤', '山本', '中村', '小林', '加藤', '吉田', '山田', '佐々木', '山口', '松本', '井上', '木村', '林', '斎藤', '清水'];
+  const surnames = ['Sato', 'Suzuki', 'Takahashi', 'Tanaka', 'Watanabe', 'Ito', 'Yamamoto', 'Nakamura', 'Kobayashi', 'Kato', 'Yoshida', 'Yamada', 'Sasaki', 'Yamaguchi', 'Matsumoto', 'Inoue', 'Kimura', 'Hayashi', 'Saito', 'Shimizu'];
   for (let i = 1; i <= 20; i++) {
     await prisma.resource.create({
       data: { 
         id: `t${i}`, 
-        name: `${surnames[i-1]} 先生`, 
+        name: `Dr. ${surnames[i-1]}`, 
         type: 'teacher', 
         order: i,
         // 佐藤先生 (t1) だけユーザーと紐付け
@@ -57,17 +57,17 @@ async function main() {
     });
   }
   // Courses
-  const courseNames = ['特進数学', '実用英語', '物理探究', '日本史B', '現代文演習', '化学基礎', '世界史A', '地理B', '生物特講', '政治経済', '古典特講', '情報I', '芸術基礎', '体育特論', '英語表現', '数学IIB', '論理国語', '科学人間学', 'キャリア探究', '多文化理解'];
+  const courseNames = ['Advanced Math', 'Practical English', 'Physics Inquiry', 'Japanese History B', 'Modern Writing', 'Basic Chemistry', 'World History A', 'Geography B', 'Biology Special', 'Politics & Economy', 'Classical Literature', 'Informatics I', 'Basic Arts', 'Physical Education', 'English Expression', 'Math IIB', 'Logical Japanese', 'Human Science', 'Career Inquiry', 'Multiculturalism'];
   for (let i = 1; i <= 20; i++) {
     await prisma.resource.create({
-      data: { id: `c${i}`, name: `${courseNames[i-1]}講座`, type: 'course', order: i }
+      data: { id: `c${i}`, name: `${courseNames[i-1]} Course`, type: 'course', order: i }
     });
   }
 
   console.log('Seeding resources...');
 
   // 授業の生成
-  const subjects = ['数学', '英語', '物理', '国語', '化学', '歴史', '地理', '生物', '社会', '情報', '芸術', '体育'];
+  const subjects = ['Math', 'English', 'Physics', 'Japanese', 'Chemistry', 'History', 'Geography', 'Biology', 'Social', 'Info', 'Arts', 'PE'];
   const baseDate = '2026-03-26';
 
   for (let i = 1; i <= 20; i++) {
@@ -89,10 +89,10 @@ async function main() {
   // 複数サブ講師のテストデータ
   await prisma.lesson.create({
     data: {
-      subject: 'チームティーチング:総合探究',
-      teacherId: 't1', // 佐藤先生
+      subject: 'Team Teaching: Research',
+      teacherId: 't1', // Dr. Sato
       subTeachers: {
-        connect: [{ id: 't2' }, { id: 't3' }] // 鈴木先生, 高橋先生
+        connect: [{ id: 't2' }, { id: 't3' }] // Dr. Suzuki, Dr. Takahashi
       },
       roomId: 'r1',
       courseId: 'c1',
@@ -106,7 +106,7 @@ async function main() {
   // 日を跨ぐ集中講義
   await prisma.lesson.create({
     data: {
-      subject: '集中講義:多文化共生',
+      subject: 'Special: Multiculturalism',
       teacherId: 't5',
       subTeachers: {
         connect: [{ id: 't1' }, { id: 't2' }]
@@ -126,7 +126,7 @@ async function main() {
   // 全体イベント
   await prisma.scheduleEvent.create({
     data: {
-      name: '全館避難訓練',
+      name: 'Evacuation Drill',
       startDate: '2026-03-26',
       startPeriodId: 'p5',
       endDate: '2026-03-26',
@@ -139,7 +139,7 @@ async function main() {
   // リソース固有（加藤先生のみ、イベント行なし）
   await prisma.scheduleEvent.create({
     data: {
-      name: '出張（学会参加）',
+      name: 'Business Trip',
       startDate: '2026-03-26',
       startPeriodId: 'p1',
       endDate: '2026-03-26',
@@ -155,7 +155,7 @@ async function main() {
   // 両方（田中先生、104号室、イベント行あり）
   await prisma.scheduleEvent.create({
     data: {
-      name: '研究授業（公開）',
+      name: 'Open Research Lesson',
       startDate: '2026-03-26',
       startPeriodId: 'p2',
       endDate: '2026-03-26',
@@ -170,18 +170,18 @@ async function main() {
 
   // その他既存のイベント
   await prisma.scheduleEvent.create({
-    data: { name: '校内清掃', startDate: '2026-03-26', startPeriodId: 'p7', endDate: '2026-03-26', endPeriodId: 'p8', color: '#e2e8f0', showInEventRow: true }
+    data: { name: 'School Cleaning', startDate: '2026-03-26', startPeriodId: 'p7', endDate: '2026-03-26', endPeriodId: 'p8', color: '#e2e8f0', showInEventRow: true }
   });
 
   // 祝日
   await prisma.holiday.createMany({
     data: [
-      { date: '2026-01-01', name: '元日' },
-      { date: '2026-02-11', name: '建国記念の日' },
-      { date: '2026-02-23', name: '天皇誕生日' },
-      { date: '2026-03-20', name: '春分の日' },
-      { date: '2026-04-29', name: '昭和の日' },
-      { start: '2026-12-29', end: '2027-01-03', name: '年末年始休暇' }
+      { date: '2026-01-01', name: 'New Year\'s Day' },
+      { date: '2026-02-11', name: 'Foundation Day' },
+      { date: '2026-02-23', name: 'Emperor\'s Birthday' },
+      { date: '2026-03-20', name: 'Vernal Equinox Day' },
+      { date: '2026-04-29', name: 'Showa Day' },
+      { start: '2026-12-29', end: '2027-01-03', name: 'Winter Holidays' }
     ]
   });
 

@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import './Login.css';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onLogin: (email: string, pass: string) => void;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function Login({ onLogin, error }: Props) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -19,10 +21,10 @@ export function Login({ onLogin, error }: Props) {
     <div className="login-container">
       <div className="login-box">
         <h2>EduGrid Scheduler</h2>
-        <p>Please sign in to continue</p>
+        <p>{t('Please sign in to continue')}</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
+            <label>{t('Email')}</label>
             <input 
               type="email" 
               value={email} 
@@ -31,7 +33,7 @@ export function Login({ onLogin, error }: Props) {
             />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <label>{t('Password')}</label>
             <input 
               type="password" 
               value={password} 
@@ -40,10 +42,10 @@ export function Login({ onLogin, error }: Props) {
             />
           </div>
           {error && <div className="login-error">{error}</div>}
-          <button type="submit" className="login-button">Sign In</button>
+          <button type="submit" className="login-button">{t('Sign In')}</button>
         </form>
         <div className="login-footer">
-          <small>Admin: admin@example.com / admin123</small>
+          <small>{t('Admin Login Hint')}</small>
         </div>
       </div>
     </div>

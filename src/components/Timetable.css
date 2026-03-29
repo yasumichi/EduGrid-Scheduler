@@ -225,6 +225,30 @@
   gap: 5px;
 }
 
+.control-group button {
+  background-color: #444;
+  color: #ccc;
+  border: 1px solid #666;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.control-group button:hover {
+  background-color: #555;
+  border-color: #888;
+  color: #fff;
+}
+
+.control-group button.active {
+  background-color: #fff; /* 背景を白に (反転) */
+  color: #333; /* 文字を黒に (反転) */
+  border-color: #fff;
+  font-weight: bold;
+}
+
 .current-date {
   font-size: 0.9rem;
   font-weight: bold;
@@ -268,6 +292,20 @@
   .holiday-card { background-color: #fee2e2 !important; color: #b91c1c !important; border-color: #fecaca; }
   .schedule-event-card { border-color: rgba(0,0,0,0.1); }
   .controls { background: #f0f0f0; }
+  .control-group button {
+    background-color: #e5e5e5;
+    color: #333;
+    border-color: #ccc;
+  }
+  .control-group button:hover {
+    background-color: #d8d8d8;
+    border-color: #bbb;
+  }
+  .control-group button.active {
+    background-color: #333; /* 背景を黒に (反転) */
+    color: #fff; /* 文字を白に (反転) */
+    border-color: #333;
+  }
   .grid-cell.is-sunday, .grid-cell.is-holiday { background-color: #fffafa; }
   .grid-cell.is-saturday { background-color: #fafaff; }
 }

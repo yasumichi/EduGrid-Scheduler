@@ -72,28 +72,28 @@ export interface Holiday {
 }
 
 export const DEFAULT_PERIODS: TimePeriod[] = [
-  { id: 'p1', name: '1限' },
-  { id: 'p2', name: '2限' },
-  { id: 'p3', name: '3限' },
-  { id: 'p4', name: '4限' },
-  { id: 'p5', name: '5限' },
-  { id: 'p6', name: '6限' },
-  { id: 'p7', name: '7限' },
-  { id: 'p8', name: '8限' },
+  { id: 'p1', name: 'Period 1' },
+  { id: 'p2', name: 'Period 2' },
+  { id: 'p3', name: 'Period 3' },
+  { id: 'p4', name: 'Period 4' },
+  { id: 'p5', name: 'Period 5' },
+  { id: 'p6', name: 'Period 6' },
+  { id: 'p7', name: 'Period 7' },
+  { id: 'p8', name: 'Period 8' },
 ];
 
 const generateResources = (): Resource[] => {
   const resources: Resource[] = [];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `r${i}`, name: `${100 + i}号室`, type: 'room', order: i });
+    resources.push({ id: `r${i}`, name: `Room ${100 + i}`, type: 'room', order: i });
   }
-  const surnames = ['佐藤', '鈴木', '高橋', '田中', '渡辺', '伊藤', '山本', '中村', '小林', '加藤', '吉田', '山田', '佐々木', '山口', '松本', '井上', '木村', '林', '斎藤', '清水'];
+  const surnames = ['Sato', 'Suzuki', 'Takahashi', 'Tanaka', 'Watanabe', 'Ito', 'Yamamoto', 'Nakamura', 'Kobayashi', 'Kato', 'Yoshida', 'Yamada', 'Sasaki', 'Yamaguchi', 'Matsumoto', 'Inoue', 'Kimura', 'Hayashi', 'Saito', 'Shimizu'];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `t${i}`, name: `${surnames[i-1]} 先生`, type: 'teacher', order: i });
+    resources.push({ id: `t${i}`, name: `Dr. ${surnames[i-1]}`, type: 'teacher', order: i });
   }
-  const courseNames = ['特進数学', '実用英語', '物理探究', '日本史B', '現代文演習', '化学基礎', '世界史A', '地理B', '生物特講', '政治経済', '古典特講', '情報I', '芸術基礎', '体育特論', '英語表現', '数学IIB', '論理国語', '科学人間学', 'キャリア探究', '多文化理解'];
+  const courseNames = ['Advanced Math', 'Practical English', 'Physics Inquiry', 'Japanese History B', 'Modern Writing', 'Basic Chemistry', 'World History A', 'Geography B', 'Biology Special', 'Politics & Economy', 'Classical Literature', 'Informatics I', 'Basic Arts', 'Physical Education', 'English Expression', 'Math IIB', 'Logical Japanese', 'Human Science', 'Career Inquiry', 'Multiculturalism'];
   for (let i = 1; i <= 20; i++) {
-    resources.push({ id: `c${i}`, name: `${courseNames[i-1]}講座`, type: 'course', order: i });
+    resources.push({ id: `c${i}`, name: `${courseNames[i-1]} Course`, type: 'course', order: i });
   }
   return resources;
 };
@@ -102,7 +102,7 @@ export const MOCK_RESOURCES = generateResources();
 
 const generateLessons = (): Lesson[] => {
   const lessons: Lesson[] = [];
-  const subjects = ['数学', '英語', '物理', '国語', '化学', '歴史', '地理', '生物', '社会', '情報', '芸術', '体育'];
+  const subjects = ['Math', 'English', 'Physics', 'Japanese', 'Chemistry', 'History', 'Geography', 'Biology', 'Social', 'Info', 'Arts', 'PE'];
   const baseDate = '2026-03-26';
 
   // 基本的な単発の授業
@@ -124,9 +124,9 @@ const generateLessons = (): Lesson[] => {
   // 複数サブ講師のテストデータ
   lessons.push({
     id: 'l-multi-sub',
-    subject: 'チームティーチング:総合探究',
-    teacherId: 't1', // 佐藤先生
-    subTeacherIds: ['t2', 't3'], // 鈴木先生, 高橋先生
+    subject: 'Team Teaching: Research',
+    teacherId: 't1', // Dr. Sato
+    subTeacherIds: ['t2', 't3'], // Dr. Suzuki, Dr. Takahashi
     roomId: 'r1',
     courseId: 'c1',
     startDate: '2026-03-26',
@@ -138,7 +138,7 @@ const generateLessons = (): Lesson[] => {
   // 日を跨ぐ集中講義
   lessons.push({
     id: 'l-special',
-    subject: '集中講義:多文化共生',
+    subject: 'Special: Multiculturalism',
     teacherId: 't5',
     subTeacherIds: ['t1', 't2'],
     roomId: 'r5',
@@ -157,7 +157,7 @@ export const MOCK_LESSONS = generateLessons();
 export const MOCK_EVENTS: ScheduleEvent[] = [
   {
     id: 'e-global-only',
-    name: '全館避難訓練',
+    name: 'Evacuation Drill',
     startDate: '2026-03-26',
     startPeriodId: 'p5',
     endDate: '2026-03-26',
@@ -167,33 +167,33 @@ export const MOCK_EVENTS: ScheduleEvent[] = [
   },
   {
     id: 'e-resource-only',
-    name: '出張（学会参加）',
+    name: 'Business Trip',
     startDate: '2026-03-26',
     startPeriodId: 'p1',
     endDate: '2026-03-26',
     endPeriodId: 'p8',
     color: '#d1fae5',
-    resourceIds: ['t10'], // 加藤先生のみ
+    resourceIds: ['t10'], // Dr. Kato only
     showInEventRow: false // イベント行には出さない
   },
   {
     id: 'e-both',
-    name: '研究授業（公開）',
+    name: 'Open Research Lesson',
     startDate: '2026-03-26',
     startPeriodId: 'p2',
     endDate: '2026-03-26',
     endPeriodId: 'p3',
     color: '#fef3c7',
-    resourceIds: ['t4', 'r4'], // 田中先生、104号室
+    resourceIds: ['t4', 'r4'], // Dr. Tanaka, Room 104
     showInEventRow: true // 両方に表示
   }
 ];
 
 export const MOCK_HOLIDAYS: Holiday[] = [
-  { date: '2026-01-01', name: '元日' },
-  { date: '2026-02-11', name: '建国記念の日' },
-  { date: '2026-02-23', name: '天皇誕生日' },
-  { date: '2026-03-20', name: '春分の日' },
-  { date: '2026-04-29', name: '昭和の日' },
-  { start: '2026-12-29', end: '2027-01-03', name: '年末年始休暇' }
+  { date: '2026-01-01', name: 'New Year\'s Day' },
+  { date: '2026-02-11', name: 'Foundation Day' },
+  { date: '2026-02-23', name: 'Emperor\'s Birthday' },
+  { date: '2026-03-20', name: 'Vernal Equinox Day' },
+  { date: '2026-04-29', name: 'Showa Day' },
+  { start: '2026-12-29', end: '2027-01-03', name: 'Winter Holidays' }
 ];
