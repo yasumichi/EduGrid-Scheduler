@@ -127,6 +127,10 @@ interface Holiday {
 }
 ```
 
+## 開発ルール (Development Rules)
+
+- **仕様の更新フロー:** 仕様の追加・変更を行う際は、まず `GEMINI.md` を更新して定義を確定させた後、ソースコードの修正に着手すること。
+
 ## 開発・プロトタイプの状況
 
 - [x] Vite + Preact + TypeScript のセットアップ
