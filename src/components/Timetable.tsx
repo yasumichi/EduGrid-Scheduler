@@ -2,6 +2,7 @@ import { TimePeriod, Resource, Lesson, ResourceType, ViewType, Holiday, Resource
 import { format, addDays, isSameDay, parseISO, getYear, differenceInDays, isWithinInterval, isBefore, isAfter, startOfDay } from 'date-fns';
 import './Timetable.css';
 import { useTranslation } from 'react-i18next';
+import { JSX } from 'preact';
 
 interface Props {
   periods: TimePeriod[];
@@ -74,9 +75,9 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     minWidth: isDayView ? '0' : `${totalWidth}px`,
     gridTemplateColumns: `150px repeat(${totalCols}, ${colWidth})`,
     gridTemplateRows: `40px 30px 80px repeat(${filteredResources.length || 0}, 80px)`,
-  } as React.CSSProperties;
+  } as JSX.CSSProperties;
 
-  const stickyLeft = { position: 'sticky', left: 0, zIndex: 25 } as React.CSSProperties;
+  const stickyLeft = { position: 'sticky', left: 0, zIndex: 25 } as JSX.CSSProperties;
 
   const dateHeaders = displayDates.map((date, dIdx) => {
     const holiday = getHoliday(date);
@@ -350,7 +351,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
 
   const wrapperStyle = {
     overflowX: isDayView ? 'hidden' : 'auto'
-  } as React.CSSProperties;
+  } as JSX.CSSProperties;
 
   return (
     <div className="timetable-wrapper" style={wrapperStyle}>
