@@ -17,7 +17,7 @@
 - **実行環境:** Node.js (Express)
 - **言語:** TypeScript (ts-node-dev による開発)
 - **データベース:** PostgreSQL
-- **ORM:** Prisma (型安全なデータベースアクセスとマイグレーション)
+- **ORM:** Prisma 7 (型安全なデータベースアクセス、driver-adapter による高速な通信)
 - **認証:** JSON Web Token (JWT), bcryptjs (パスワードハッシュ化)
 
 ## 主要要件 (Key Features)

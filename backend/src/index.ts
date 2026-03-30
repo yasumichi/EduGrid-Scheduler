@@ -4,12 +4,16 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient, UserRole, ResourceType } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import { verifyToken, AuthRequest } from './authMiddleware';
 
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 const port = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
