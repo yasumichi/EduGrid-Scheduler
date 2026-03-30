@@ -1,4 +1,4 @@
-# EduGrid Scheduler デプロイガイド
+# Education Scheduler デプロイガイド
 
 新規環境に本プロジェクトをセットアップし、実行するための手順です。
 
