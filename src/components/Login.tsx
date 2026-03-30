@@ -44,9 +44,7 @@ export function Login({ onLogin, error }: Props) {
           {error && <div className="login-error">{error}</div>}
           <button type="submit" className="login-button">{t('Sign In')}</button>
         </form>
-        <div className="login-footer">
-          <small>{t('Admin Login Hint')}</small>
-        </div>
+
       </div>
     </div>
   );
