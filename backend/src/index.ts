@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole, ResourceType } from '@prisma/client';
 import { verifyToken, AuthRequest } from './authMiddleware';
 
 dotenv.config();
@@ -70,11 +70,83 @@ app.get('/api/health', (req, res) => {
 app.get('/api/resources', verifyToken, async (req, res) => {
   try {
     const resources = await prisma.resource.findMany({
+      include: {
+        subjects: true
+      },
       orderBy: { order: 'asc' }
     });
     res.json(resources);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch resources' });
+  }
+});
+
+// 講座の作成・更新 (ADMIN権限)
+app.post('/api/courses', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  }
+  const { id, name, order, startDate, endDate, subjects } = req.body;
+  try {
+    let course;
+    if (id) {
+      // 更新
+      course = await prisma.resource.update({
+        where: { id },
+        data: {
+          name,
+          order: order || 0,
+          startDate,
+          endDate,
+          subjects: {
+            deleteMany: {},
+            create: subjects.map((s: any) => ({
+              name: s.name,
+              totalPeriods: s.totalPeriods
+            }))
+          }
+        },
+        include: { subjects: true }
+      });
+    } else {
+      // 新規作成
+      course = await prisma.resource.create({
+        data: {
+          name,
+          type: ResourceType.course,
+          order: order || 0,
+          startDate,
+          endDate,
+          subjects: {
+            create: subjects.map((s: any) => ({
+              name: s.name,
+              totalPeriods: s.totalPeriods
+            }))
+          }
+        },
+        include: { subjects: true }
+      });
+    }
+    res.json(course);
+  } catch (error) {
+    console.error('Failed to save course:', error);
+    res.status(500).json({ error: 'Failed to save course' });
+  }
+});
+
+// 講座の削除 (ADMIN権限)
+app.delete('/api/courses/:id', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  }
+  const { id } = req.params;
+  try {
+    await prisma.resource.delete({
+      where: { id }
+    });
+    res.json({ message: 'Course deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete course' });
   }
 });
 

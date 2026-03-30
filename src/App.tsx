@@ -5,6 +5,7 @@ import { Timetable } from './components/Timetable';
 import { Login } from './components/Login';
 import { PeriodManager } from './components/PeriodManager';
 import { LabelManager } from './components/LabelManager';
+import { CourseManager } from './components/CourseManager';
 import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, Holiday, ResourceLabels, User, AuthResponse, TimePeriod } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
@@ -20,6 +21,7 @@ export function App() {
   const isHolidayMode = useSignal<boolean>(false);
   const showPeriodManager = useSignal<boolean>(false);
   const showLabelManager = useSignal<boolean>(false);
+  const showCourseManager = useSignal<boolean>(false);
   const showSettingsDropdown = useSignal<boolean>(false);
   const resources = useSignal<Resource[]>([]);
   const lessons = useSignal<Lesson[]>([]);
@@ -182,6 +184,15 @@ export function App() {
                       >
                         {t('Manage Labels')}
                       </button>
+                      <button 
+                        className="dropdown-item" 
+                        onClick={() => {
+                          showCourseManager.value = true;
+                          showSettingsDropdown.value = false;
+                        }}
+                      >
+                        {t('Manage Courses')}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -293,6 +304,16 @@ export function App() {
           onClose={() => showLabelManager.value = false}
           onUpdate={(newLabels) => resourceLabels.value = newLabels}
           initialLabels={resourceLabels.value}
+        />
+      )}
+
+      {showCourseManager.value && token.value && (
+        <CourseManager 
+          token={token.value} 
+          backendUrl={BACKEND_URL} 
+          onClose={() => showCourseManager.value = false}
+          onUpdate={fetchData}
+          resources={resources.value}
         />
       )}
     </div>

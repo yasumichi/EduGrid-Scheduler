@@ -56,6 +56,10 @@
   - 各リソースの表示名（ラベル）は設定により一括変更可能（例：「講師」→「先生」）。
   - メイン講師・サブ講師のラベルも設定可能で、いずれも対等な扱いで表示する。
 - **リソースの順序制御:** `order` フィールドにより、リソースの表示順序を任意に制御可能。
+- **講座 (Course) 管理:**
+  - 講座には開始年月日と終了年月日を保持させる（0時開始、24時終了を想定）。
+  - 講座には、あらかじめ複数の課目（Subject）とその合計時限数を関連付けることが可能。
+  - 管理画面から講座の作成・修正・削除を行えるようにする。
 - **Sticky レイアウト:**
   - ヘッダー（日付・時限・イベント）およびサイドバー（リソースラベル列）を固定し、スクロール時の一覧性を確保。
   - 水平スクロール中もリソースラベルが画面外に消えないよう列を完全に固定し、セルの重なりや位置ズレが発生しないように制御する。
@@ -107,6 +111,13 @@ interface TimePeriod {
   order: number;
 }
 
+// 講座課目定義
+interface CourseSubject {
+  id: string;
+  name: string;
+  totalPeriods: number;
+}
+
 // リソース定義 (Resource テーブル)
 interface Resource {
   id: string;
@@ -114,6 +125,9 @@ interface Resource {
   type: ResourceType;
   order: number;
   userId?: string; // 紐付けられたユーザーID (講師の場合)
+  startDate?: string; // 講座開始日 YYYY-MM-DD
+  endDate?: string;   // 講座終了日 YYYY-MM-DD
+  subjects?: CourseSubject[]; // 講座に関連する課目
 }
 
 // 授業データ (Lesson テーブル)

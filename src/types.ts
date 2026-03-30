@@ -30,12 +30,21 @@ export interface ResourceLabels {
   subTeacher: string;
 }
 
+export interface CourseSubject {
+  id: string;
+  name: string;
+  totalPeriods: number;
+}
+
 export interface Resource {
   id: string;
   name: string;
   type: ResourceType;
   order?: number;
   userId?: string; // 紐付けられたユーザーID
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  subjects?: CourseSubject[];
 }
 
 export interface ScheduleEvent {

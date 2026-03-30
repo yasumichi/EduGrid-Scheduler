@@ -1,0 +1,214 @@
+import { useState, useEffect } from 'preact/hooks';
+import { useTranslation } from 'react-i18next';
+import { Resource, CourseSubject } from '../types';
+import './CourseManager.css';
+
+interface Props {
+  token: string;
+  backendUrl: string;
+  onClose: () => void;
+  onUpdate: () => void;
+  resources: Resource[];
+}
+
+export function CourseManager({ token, backendUrl, onClose, onUpdate, resources }: Props) {
+  const { t } = useTranslation();
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<{
+    name: string;
+    order: number;
+    startDate: string;
+    endDate: string;
+    subjects: { name: string; totalPeriods: number }[];
+  }>({
+    name: '',
+    order: 0,
+    startDate: '',
+    endDate: '',
+    subjects: []
+  });
+
+  const courses = resources.filter(r => r.type === 'course');
+
+  useEffect(() => {
+    if (selectedCourseId) {
+      const course = courses.find(c => c.id === selectedCourseId);
+      if (course) {
+        setFormData({
+          name: course.name,
+          order: course.order || 0,
+          startDate: course.startDate || '',
+          endDate: course.endDate || '',
+          subjects: course.subjects?.map(s => ({ name: s.name, totalPeriods: s.totalPeriods })) || []
+        });
+      }
+    } else {
+      setFormData({
+        name: '',
+        order: (courses.length + 1),
+        startDate: '',
+        endDate: '',
+        subjects: []
+      });
+    }
+  }, [selectedCourseId]);
+
+  const handleAddSubject = () => {
+    setFormData({
+      ...formData,
+      subjects: [...formData.subjects, { name: '', totalPeriods: 0 }]
+    });
+  };
+
+  const handleRemoveSubject = (index: number) => {
+    setFormData({
+      ...formData,
+      subjects: formData.subjects.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleSubjectChange = (index: number, field: 'name' | 'totalPeriods', value: string | number) => {
+    const newSubjects = [...formData.subjects];
+    newSubjects[index] = { ...newSubjects[index], [field]: value };
+    setFormData({ ...formData, subjects: newSubjects });
+  };
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/courses`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: selectedCourseId,
+          ...formData
+        })
+      });
+      if (res.ok) {
+        onUpdate();
+        onClose();
+      } else {
+        alert('Failed to save course');
+      }
+    } catch (err) {
+      console.error('Error saving course:', err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCourseId) return;
+    if (!confirm(t('Are you sure you want to delete this course?'))) return;
+
+    try {
+      const res = await fetch(`${backendUrl}/courses/${selectedCourseId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        onUpdate();
+        onClose();
+      } else {
+        alert('Failed to delete course');
+      }
+    } catch (err) {
+      console.error('Error deleting course:', err);
+    }
+  };
+
+  return (
+    <div className="course-manager-overlay">
+      <div className="course-manager-box">
+        <div className="course-manager-header">
+          <h2>{t('Manage Courses')}</h2>
+          <button className="close-button" onClick={onClose}>×</button>
+        </div>
+
+        <div className="course-manager-content">
+          <div className="course-selector">
+            <label>{t('Select Course to Edit')}</label>
+            <select 
+              value={selectedCourseId || ''} 
+              onChange={(e) => setSelectedCourseId(e.currentTarget.value || null)}
+            >
+              <option value="">{t('Add New Course')}</option>
+              {courses.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="course-form">
+            <div className="form-group">
+              <label>{t('Course Name')}</label>
+              <input 
+                type="text" 
+                value={formData.name} 
+                onInput={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('Start Date')}</label>
+                <input 
+                  type="date" 
+                  value={formData.startDate} 
+                  onInput={(e) => setFormData({ ...formData, startDate: e.currentTarget.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('End Date')}</label>
+                <input 
+                  type="date" 
+                  value={formData.endDate} 
+                  onInput={(e) => setFormData({ ...formData, endDate: e.currentTarget.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>{t('Order')}</label>
+              <input 
+                type="number" 
+                value={formData.order} 
+                onInput={(e) => setFormData({ ...formData, order: parseInt(e.currentTarget.value) })}
+              />
+            </div>
+
+            <div className="subjects-section">
+              <h3>{t('Subjects')}</h3>
+              {formData.subjects.map((s, index) => (
+                <div key={index} className="subject-row">
+                  <input 
+                    type="text" 
+                    placeholder={t('Subject Name')}
+                    value={s.name}
+                    onInput={(e) => handleSubjectChange(index, 'name', e.currentTarget.value)}
+                  />
+                  <input 
+                    type="number" 
+                    placeholder={t('Total Periods')}
+                    value={s.totalPeriods}
+                    onInput={(e) => handleSubjectChange(index, 'totalPeriods', parseInt(e.currentTarget.value))}
+                  />
+                  <button className="remove-btn" onClick={() => handleRemoveSubject(index)}>×</button>
+                </div>
+              ))}
+              <button className="add-btn" onClick={handleAddSubject}>{t('Add Subject')}</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="course-manager-footer">
+          {selectedCourseId && (
+            <button className="delete-button" onClick={handleDelete}>{t('Delete')}</button>
+          )}
+          <div className="footer-right">
+            <button className="cancel-button" onClick={onClose}>{t('Cancel')}</button>
+            <button className="save-button" onClick={handleSave}>{t('Save Changes')}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -21,12 +21,23 @@ model Resource {
   type             ResourceType
   order            Int             @default(0)
   userId           String?         @unique
+  startDate        String?         // YYYY-MM-DD
+  endDate          String?         // YYYY-MM-DD
+  subjects         CourseSubject[] @relation("CourseSubjects")
   lessonsAsCourse  Lesson[]        @relation("CourseLessons")
   lessonsAsRoom    Lesson[]        @relation("RoomLessons")
   lessonsAsTeacher Lesson[]        @relation("TeacherLessons")
   user             User?           @relation("UserResource", fields: [userId], references: [id])
   events           ScheduleEvent[] @relation("ResourceEvents")
   lessonsAsSub     Lesson[]        @relation("SubTeacherLessons")
+}
+
+model CourseSubject {
+  id           String   @id @default(uuid())
+  name         String
+  totalPeriods Int
+  resourceId   String
+  course       Resource @relation("CourseSubjects", fields: [resourceId], references: [id], onDelete: Cascade)
 }
 
 model Lesson {
