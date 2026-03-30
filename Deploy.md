@@ -25,6 +25,7 @@ CREATE DATABASE edugrid OWNER edugrid;
 ## 3. 環境変数の設定 (Environment Variables)
 
 バックエンドディレクトリに `.env` ファイルを作成し、接続情報と認証キーを記述します。
+**Prisma 7 では、CLI操作時に `prisma.config.ts` を通じてこの変数を読み込みます。**
 
 1. `backend/.env` を作成:
    ```bash
@@ -54,7 +55,8 @@ cd ..
 
 ## 5. データベースの初期化とシード (DB Initialization)
 
-Prisma を使用してテーブルを作成し、初期テストデータ（ユーザー含む）を投入します。
+Prisma 7 を使用してテーブルを作成し、初期テストデータ（ユーザー含む）を投入します。
+**本プロジェクトは PostgreSQL 用の `pg` ドライバーアダプターを使用するように構成されています。**
 
 ```bash
 cd backend
@@ -95,9 +97,9 @@ npm run dev
 
 ## トラブルシューティング
 
-- **データベース接続エラー:** `backend/.env` の `DATABASE_URL` が正しいか確認してください。
+- **データベース接続エラー:** `backend/.env` の `DATABASE_URL` が正しいか確認してください。また、`backend/prisma.config.ts` が存在し、`.env` を読み込む設定になっているか確認してください。
 - **JWTエラー:** `backend/.env` に `JWT_SECRET` が設定されているか確認してください。
-- **Prisma エラー:** `cd backend && npx prisma generate` を実行してクライアントを再生成してみてください。
+- **Prisma エラー:** `cd backend && npx prisma generate` を実行してクライアントを再生成してみてください。Prisma 7 では、`PrismaClient` の初期化時に `adapter` (pg) を渡す構成になっています。
 
 ---
 
