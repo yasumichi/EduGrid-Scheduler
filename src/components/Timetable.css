@@ -31,7 +31,7 @@
   min-width: 100%;
 }
 
-/* 左上の交差点 (常に最前面：z-index: 30) */
+/* 左上の交差点 (常に最前面：z-index: 40) */
 .grid-corner {
   background-color: #222;
   border-right: 1px solid #666;
@@ -39,7 +39,7 @@
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 30;
+  z-index: 40;
   height: 70px; /* 40 + 30 */
   box-sizing: border-box;
   min-width: 150px;
@@ -47,7 +47,7 @@
   justify-self: start;
 }
 
-/* 日付ヘッダー (z-index: 20) */
+/* 日付ヘッダー (z-index: 35) */
 .date-header {
   background-color: #222;
   color: #fff;
@@ -59,7 +59,7 @@
   border-right: 1px solid #444;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 35;
   font-size: 0.9rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -67,7 +67,7 @@
   text-align: center;
 }
 
-/* 時限ヘッダー (z-index: 19) */
+/* 時限ヘッダー (z-index: 34) */
 .period-header {
   background-color: #444;
   color: #ccc;
@@ -79,14 +79,14 @@
   border-right: 1px solid #555;
   position: sticky;
   top: 40px; /* date-header の高さ */
-  z-index: 19;
+  z-index: 34;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
 }
 
-/* イベント行ラベル (z-index: 25) */
+/* イベント行ラベル (z-index: 30) */
 .event-label {
   background-color: #3d3d3d;
   color: #eee;
@@ -97,7 +97,7 @@
   position: sticky;
   top: 70px; /* 40 + 30 */
   left: 0;
-  z-index: 25;
+  z-index: 30;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -129,7 +129,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  z-index: 20;
+  z-index: 26;
   position: sticky;
   top: 72px; /* 70 + 2 (margin) */
   font-weight: bold;

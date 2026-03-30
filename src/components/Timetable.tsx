@@ -77,7 +77,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     gridTemplateRows: `40px 30px 80px repeat(${filteredResources.length || 0}, 80px)`,
   } as JSX.CSSProperties;
 
-  const stickyLeft = { position: 'sticky', left: 0, zIndex: 25 } as JSX.CSSProperties;
+  const stickyLeft = { position: 'sticky', left: 0 } as JSX.CSSProperties;
 
   const dateHeaders = displayDates.map((date, dIdx) => {
     const holiday = getHoliday(date);
