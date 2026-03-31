@@ -7,6 +7,7 @@ import { PeriodManager } from './components/PeriodManager';
 import { LabelManager } from './components/LabelManager';
 import { CourseManager } from './components/CourseManager';
 import { EventManager } from './components/EventManager';
+import { LessonManager } from './components/LessonManager';
 import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, Holiday, ResourceLabels, User, AuthResponse, TimePeriod } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
@@ -24,7 +25,9 @@ export function App() {
   const showLabelManager = useSignal<boolean>(false);
   const showCourseManager = useSignal<boolean>(false);
   const showEventManager = useSignal<boolean>(false);
+  const showLessonManager = useSignal<boolean>(false);
   const editingEvent = useSignal<Partial<ScheduleEvent> | null>(null);
+  const editingLesson = useSignal<Partial<Lesson> | null>(null);
   const showSettingsDropdown = useSignal<boolean>(false);
   const resources = useSignal<Resource[]>([]);
   const lessons = useSignal<Lesson[]>([]);
@@ -316,6 +319,18 @@ export function App() {
             editingEvent.value = { startDate: date, startPeriodId: periodId };
             showEventManager.value = true;
           }}
+          onLessonClick={(lesson) => {
+            editingLesson.value = lesson;
+            showLessonManager.value = true;
+          }}
+          onEmptyResourceCellClick={(resourceId, date, periodId) => {
+            const initial: Partial<Lesson> = { startDate: date, startPeriodId: periodId, endDate: date, endPeriodId: periodId };
+            if (viewMode.value === 'room') initial.roomId = resourceId;
+            else if (viewMode.value === 'teacher') initial.teacherId = resourceId;
+            else if (viewMode.value === 'course') initial.courseId = resourceId;
+            editingLesson.value = initial;
+            showLessonManager.value = true;
+          }}
         />
       </div>
 
@@ -360,6 +375,22 @@ export function App() {
           periods={periods.value}
           resources={resources.value}
           initialEvent={editingEvent.value || {}}
+        />
+      )}
+
+      {showLessonManager.value && token.value && (
+        <LessonManager 
+          token={token.value} 
+          backendUrl={BACKEND_URL} 
+          onClose={() => {
+            showLessonManager.value = false;
+            editingLesson.value = null;
+          }}
+          onUpdate={fetchData}
+          periods={periods.value}
+          resources={resources.value}
+          lessons={lessons.value}
+          initialLesson={editingLesson.value || {}}
         />
       )}
     </div>

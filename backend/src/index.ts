@@ -171,6 +171,66 @@ app.get('/api/lessons', verifyToken, async (req, res) => {
   }
 });
 
+// 授業の作成・更新 (ADMIN権限)
+app.post('/api/lessons', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  }
+  const { id, subject, teacherId, subTeacherIds, roomId, courseId, startDate, startPeriodId, endDate, endPeriodId } = req.body;
+  try {
+    const subTeachersConnect = subTeacherIds?.map((tid: string) => ({ id: tid })) || [];
+    let lesson;
+    const data = {
+      subject,
+      teacherId,
+      roomId,
+      courseId,
+      startDate,
+      startPeriodId,
+      endDate,
+      endPeriodId,
+      subTeachers: {
+        set: [],
+        connect: subTeachersConnect
+      }
+    };
+
+    if (id) {
+      lesson = await prisma.lesson.update({
+        where: { id },
+        data,
+        include: { subTeachers: true }
+      });
+    } else {
+      // Create cannot use 'set'
+      const createData = { ...data };
+      delete (createData as any).subTeachers.set;
+      lesson = await prisma.lesson.create({
+        data: createData,
+        include: { subTeachers: true }
+      });
+    }
+    res.json(lesson);
+  } catch (error) {
+    console.error('Failed to save lesson:', error);
+    res.status(500).json({ error: 'Failed to save lesson' });
+  }
+});
+
+// 授業の削除 (ADMIN権限)
+app.delete('/api/lessons/:id', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) {
+    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  }
+  const { id } = req.params;
+  try {
+    await prisma.lesson.delete({ where: { id } });
+    res.json({ message: 'Lesson deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete lesson' });
+  }
+});
+
 // イベント一覧取得 (認証必須)
 app.get('/api/events', verifyToken, async (req, res) => {
   try {

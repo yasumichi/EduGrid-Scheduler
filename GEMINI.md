@@ -194,5 +194,8 @@ interface Holiday {
 - [x] 現在の表示モード（viewMode/viewType）のボタン配色反転による強調表示
 - [x] `react-i18next` による国際化 (i18n) の完全実装と日本語/英語対応
 - [x] 動的な時限 (TimePeriod) 管理機能の実装 (DB/API/UI)
+- [x] 講座 (Course) 管理機能（CRUD + 課目 CSV インポート）の実装
+- [x] 行事 (ScheduleEvent) 管理機能（CRUD + 重複時の等分割表示）の実装
+- [x] 授業 (Lesson) 管理機能（CRUD + 講座期間バリデーション + 課目残り時限計算）の実装
 - [ ] ドラッグ＆ドロップによる授業の移動・編集機能
 - [ ] AI によるスケジューリング最適化/支援機能の検討

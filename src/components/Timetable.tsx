@@ -16,9 +16,11 @@ interface Props {
   labels: ResourceLabels;
   onEventClick?: (event: ScheduleEvent) => void;
   onEmptyEventClick?: (date: string, periodId: string) => void;
+  onLessonClick?: (lesson: Lesson) => void;
+  onEmptyResourceCellClick?: (resourceId: string, date: string, periodId: string) => void;
 }
 
-export function Timetable({ periods, resources, lessons, events, viewMode, viewType, baseDate, holidays, labels, onEventClick, onEmptyEventClick }: Props) {
+export function Timetable({ periods, resources, lessons, events, viewMode, viewType, baseDate, holidays, labels, onEventClick, onEmptyEventClick, onLessonClick, onEmptyResourceCellClick }: Props) {
   const { t } = useTranslation();
   const locale = navigator.language;
   const dateFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', weekday: 'short' });
@@ -236,7 +238,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     const resNames = [
       ...(e.resourceIds || []),
       ...(e.resources || []).map(r => r.id)
-    ].map(id => getResourceName(id)).filter(name => name !== id).join(', ');
+    ].map(id => getResourceName(id)).join(', ');
 
     const tooltip = `${e.name}\n${e.startDate} ${startP} ～ ${e.endDate} ${endP}` + (resNames ? `\n${labels.event}: ${resNames}` : '');
 
@@ -350,12 +352,13 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
           className="lesson-card"
           style={{
             gridColumn: `${sCol} / span ${span}`,
-            gridRow: resourceIdx + 4
+            gridRow: resourceIdx + 4,
+            cursor: 'pointer'
           }}
           title={tooltipText}
+          onDblClick={() => onLessonClick?.(l)}
         >
-          <div className="lesson-subject">{translatedSubject}</div>
-          <div className="lesson-details">
+          <div className="lesson-subject">{translatedSubject}</div>          <div className="lesson-details">
             {infoItems.map((item, idx) => (
               <div key={idx} className="lesson-info">
                 {item.label}: {item.value}
@@ -379,19 +382,21 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         style={gridStyle}
       >
         <div className="grid-corner" style={{ ...stickyLeft, gridColumn: 1, gridRow: "1 / span 2", zIndex: 100 }} />
-        {filteredResources.map((_, rIdx) => 
+        {filteredResources.map((res, rIdx) => 
           displayDates.map((date, dIdx) => {
             const isSun = date.getDay() === 0;
             const isSat = date.getDay() === 6;
             const holiday = getHoliday(date);
+            const dateStr = format(date, 'yyyy-MM-dd');
             let cellClass = 'grid-cell';
             if (isSun) cellClass += ' is-sunday';
             if (isSat) cellClass += ' is-saturday';
             if (holiday) cellClass += ' is-holiday';
-            return periods.map((_, pIdx) => (
+            return periods.map((p, pIdx) => (
               <div key={`cell-${rIdx}-${dIdx}-${pIdx}`} 
                    className={cellClass} 
-                   style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: rIdx + 4 }} />
+                   style={{ gridColumn: dIdx * periods.length + pIdx + 2, gridRow: rIdx + 4 }}
+                   onDblClick={() => onEmptyResourceCellClick?.(res.id, dateStr, p.id)} />
             ));
           })
         )}

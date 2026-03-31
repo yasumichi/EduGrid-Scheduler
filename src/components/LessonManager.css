@@ -1,0 +1,160 @@
+.lesson-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.lesson-manager-box {
+  background-color: #242424;
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.lesson-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+
+.lesson-manager-header h2 {
+  margin: 0;
+}
+
+.lesson-manager-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.form-group input,
+.form-group select {
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.sub-teacher-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.sub-teacher-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #444;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.sub-teacher-item:hover {
+  background: #555;
+}
+
+.sub-teacher-item.selected {
+  background: #646cff;
+  border-color: #888;
+}
+
+.sub-teacher-item input {
+  display: none;
+}
+
+.lesson-manager-footer {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #444;
+  padding-top: 15px;
+}
+
+.delete-button {
+  background-color: #522;
+  color: #f88;
+  border: 1px solid #744;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.footer-right {
+  display: flex;
+  gap: 10px;
+}
+
+.cancel-button {
+  background-color: transparent;
+  border: 1px solid #666;
+  color: #ccc;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.save-button {
+  background-color: #646cff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+@media (prefers-color-scheme: light) {
+  .lesson-manager-box { background-color: #fff; color: #333; }
+  .form-group input, .form-group select, .sub-teacher-list { background-color: #f5f5f5; border-color: #ccc; color: #333; }
+  .sub-teacher-item { background: #eee; color: #333; }
+  .sub-teacher-item.selected { background: #646cff; color: #fff; }
+  .lesson-manager-header, .lesson-manager-footer { border-color: #eee; }
+  .delete-button { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+}
