@@ -148,217 +148,206 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     ));
   });
 
-  // イベント行（row 3）に表示する全アイテムの競合チェック
-  type Placement = { id: string; start: number; end: number; level: number; element: JSX.Element };
-  const row3Placements: Placement[] = [];
-
-  const getPlacementLevel = (start: number, end: number) => {
-    let level = 0;
-    while (true) {
-      const conflict = row3Placements.some(p => p.level === level && !(end < p.start || start > p.end));
-      if (!conflict) return level;
-      level++;
-    }
+  // 行内での重なりを計算する汎用関数
+  const calculateLayout = (items: { id: string, start: number, end: number }[]) => {
+    if (items.length === 0) return [];
+    const placements: { id: string, start: number, end: number, level: number, maxLevelInGroup: number }[] = [];
+    const sortedItems = [...items].sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+    sortedItems.forEach(item => {
+      let level = 0;
+      while (placements.some(p => p.level === level && !(item.end < p.start || item.start > p.end))) {
+        level++;
+      }
+      placements.push({ ...item, level, maxLevelInGroup: 0 });
+    });
+    placements.forEach(p => {
+      const overlapping = placements.filter(other => !(p.end < other.start || p.start > other.end));
+      p.maxLevelInGroup = Math.max(...overlapping.map(o => o.level)) + 1;
+    });
+    return placements;
   };
 
-  const holidayItems = displayDates.flatMap((date, dIdx) => {
+  // --- 行事行（row 3）のデータ準備 ---
+  const row3Items: { id: string, start: number, end: number, type: 'holiday' | 'event', data: any }[] = [];
+  displayDates.forEach((date, dIdx) => {
     const holiday = getHoliday(date);
-    if (!holiday) return [];
-
+    if (!holiday) return;
     if (holiday.date && isSameDay(date, startOfDay(parseISO(holiday.date)))) {
       const startCol = dIdx * periods.length + 2;
       const endCol = dIdx * periods.length + periods.length + 2;
-      const level = getPlacementLevel(startCol, endCol - 1);
-      const el = (
-        <div key={`holiday-${date.toISOString()}`}
-             className="event-card holiday-card"
-             style={{ 
-               gridColumn: `${startCol} / ${endCol}`, 
-               gridRow: 3,
-               top: `${72 + level * 22}px`
-             }}>
-             {holiday.name}
-             </div>
-             );
-             row3Placements.push({ id: `holiday-${date.toISOString()}`, start: startCol, end: endCol - 1, level, element: el });
-             return [el];
-             }
+      row3Items.push({ id: `holiday-${date.toISOString()}`, start: startCol, end: endCol - 1, type: 'holiday', data: holiday });
+    } else if (holiday.start && holiday.end) {
+      const hStart = startOfDay(parseISO(holiday.start));
+      const hEnd = startOfDay(parseISO(holiday.end));
+      if (isSameDay(date, hStart) || (isSameDay(date, displayDates[0]) && isAfter(date, hStart) && isBefore(date, hEnd))) {
+        const actualStart = isAfter(hStart, displayDates[0]) ? hStart : displayDates[0];
+        const actualEnd = isBefore(hEnd, displayDates[displayDates.length - 1]) ? hEnd : displayDates[displayDates.length - 1];
+        const sIdx = displayDates.findIndex(d => isSameDay(d, actualStart));
+        const eIdx = displayDates.findIndex(d => isSameDay(d, actualEnd));
+        if (sIdx !== -1 && eIdx !== -1 && isSameDay(date, actualStart)) {
+          const startCol = sIdx * periods.length + 2;
+          const endCol = eIdx * periods.length + periods.length + 2;
+          row3Items.push({ id: `holiday-range-${holiday.name}-${date.toISOString()}`, start: startCol, end: endCol - 1, type: 'holiday', data: holiday });
+        }
+      }
+    }
+  });
 
-             const hStart = holiday.start ? startOfDay(parseISO(holiday.start)) : null;
-             const hEnd = holiday.end ? startOfDay(parseISO(holiday.end)) : null;
+  events.forEach(e => {
+    const eStart = startOfDay(parseISO(e.startDate));
+    const eEnd = startOfDay(parseISO(e.endDate));
+    if (isAfter(eStart, currentViewEnd) || isBefore(eEnd, currentViewStart)) return;
+    const resourceIdList = [...(e.resourceIds || []), ...(e.resources || []).map(r => r.id)];
+    if (e.showInEventRow !== false || resourceIdList.length === 0) {
+      const startDayIdx = displayDates.findIndex(d => isSameDay(d, eStart));
+      const endDayIdx = displayDates.findIndex(d => isSameDay(d, eEnd));
+      const startPeriodIdx = periods.findIndex(p => p.id === e.startPeriodId);
+      const endPeriodIdx = periods.findIndex(p => p.id === e.endPeriodId);
+      const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
+      const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
+      row3Items.push({ id: `event-${e.id}`, start: sCol, end: eCol, type: 'event', data: e });
+    }
+  });
 
-             if (hStart && hEnd) {
-             if (isSameDay(date, hStart) || (isSameDay(date, displayDates[0]) && isAfter(date, hStart) && isBefore(date, hEnd))) {
-             const actualStart = isAfter(hStart, displayDates[0]) ? hStart : displayDates[0];
-             const actualEnd = isBefore(hEnd, displayDates[displayDates.length - 1]) ? hEnd : displayDates[displayDates.length - 1];
+  const row3Layouts = calculateLayout(row3Items);
+  const holidayItems = row3Layouts.filter(l => row3Items.find(i => i.id === l.id)?.type === 'holiday').map(layout => {
+    const item = row3Items.find(i => i.id === layout.id)!;
+    const h = item.data;
+    const unitHeight = (80 - 8) / layout.maxLevelInGroup;
+    const itemHeight = unitHeight - 8;
+    const top = 70 + 4 + (layout.level * unitHeight);
+    return (
+      <div key={layout.id} className="event-card holiday-card"
+           style={{ gridColumn: `${layout.start} / ${layout.end + 1}`, gridRow: 3, top: `${top}px`, height: `${itemHeight}px` }}>
+        {h.name}
+      </div>
+    );
+  });
 
-             const sIdx = displayDates.findIndex(d => isSameDay(d, actualStart));
-             const eIdx = displayDates.findIndex(d => isSameDay(d, actualEnd));
+  const globalEventItems = row3Layouts.filter(l => row3Items.find(i => i.id === l.id)?.type === 'event').map(layout => {
+    const e = row3Items.find(i => i.id === layout.id)!.data;
+    const unitHeight = (80 - 8) / layout.maxLevelInGroup;
+    const itemHeight = unitHeight - 8;
+    const top = 70 + 4 + (layout.level * unitHeight);
+    return (
+      <div key={layout.id} className="event-card schedule-event-card"
+           style={{ gridColumn: `${layout.start} / ${layout.end + 1}`, gridRow: 3, backgroundColor: e.color, top: `${top}px`, height: `${itemHeight}px`, cursor: 'pointer' }}
+           onDblClick={() => onEventClick?.(e)}>
+        {e.name}
+      </div>
+    );
+  });
 
-             if (sIdx !== -1 && eIdx !== -1 && isSameDay(date, actualStart)) {
-             const startCol = sIdx * periods.length + 2;
-             const endCol = eIdx * periods.length + periods.length + 2;
-             const level = getPlacementLevel(startCol, endCol - 1);
-             const el = (
-             <div key={`holiday-range-${holiday.name}-${date.toISOString()}`}
-                 className="event-card holiday-card"
-                 style={{ 
-                   gridColumn: `${startCol} / ${endCol}`, 
-                   gridRow: 3,
-                   top: `${72 + level * 22}px`
-                 }}>
-              {holiday.name}
-             </div>
-             );
-             row3Placements.push({ id: `holiday-range-${holiday.name}`, start: startCol, end: endCol - 1, level, element: el });
-             return [el];
-             }
-             }
-             }
+  // --- リソース行のデータ準備 ---
+  const resourceEventItems: JSX.Element[] = [];
+  filteredResources.forEach((res, resIdx) => {
+    const resItems: { id: string, start: number, end: number, data: ScheduleEvent }[] = [];
+    events.forEach(e => {
+      const resourceIdList = [...(e.resourceIds || []), ...(e.resources || []).map(r => r.id)];
+      if (resourceIdList.includes(res.id)) {
+        const eStart = startOfDay(parseISO(e.startDate));
+        const eEnd = startOfDay(parseISO(e.endDate));
+        if (isAfter(eStart, currentViewEnd) || isBefore(eEnd, currentViewStart)) return;
+        const startDayIdx = displayDates.findIndex(d => isSameDay(d, eStart));
+        const endDayIdx = displayDates.findIndex(d => isSameDay(d, eEnd));
+        const startPeriodIdx = periods.findIndex(p => p.id === e.startPeriodId);
+        const endPeriodIdx = periods.findIndex(p => p.id === e.endPeriodId);
+        const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
+        const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
+        resItems.push({ id: `event-${e.id}-${res.id}`, start: sCol, end: eCol, data: e });
+      }
+    });
 
-             return [];
-             });
+    const layouts = calculateLayout(resItems);
+    layouts.forEach(layout => {
+      const e = resItems.find(i => i.id === layout.id)!.data;
+      const unitHeight = (80 - 8) / layout.maxLevelInGroup;
+      const itemHeight = unitHeight - 8;
+      const top = 4 + (layout.level * unitHeight);
+      resourceEventItems.push(
+        <div key={layout.id} className="event-card schedule-event-card resource-event-card"
+             style={{ gridColumn: `${layout.start} / ${layout.end + 1}`, gridRow: resIdx + 4, backgroundColor: e.color, top: `${top}px`, height: `${itemHeight}px`, cursor: 'pointer', position: 'relative' }}
+             onDblClick={() => onEventClick?.(e)}>
+          {e.name}
+        </div>
+      );
+    });
+  });
 
-             const scheduleEventItems = events.flatMap(e => {
-             const eStart = startOfDay(parseISO(e.startDate));
-             const eEnd = startOfDay(parseISO(e.endDate));
+  const resourceLabels = filteredResources.map((r, idx) => (
+    <div key={`label-${r.id}`} className="grid-label" style={{ ...stickyLeft, gridColumn: 1, gridRow: idx + 4 }}>
+      {t(r.name)}
+    </div>
+  ));
 
-             if (isAfter(eStart, currentViewEnd) || isBefore(eEnd, currentViewStart)) return [];
-             const startDayIdx = displayDates.findIndex(d => isSameDay(d, eStart));
-             const endDayIdx = displayDates.findIndex(d => isSameDay(d, eEnd));
-             const startPeriodIdx = periods.findIndex(p => p.id === e.startPeriodId);
-             const endPeriodIdx = periods.findIndex(p => p.id === e.endPeriodId);
-             // ビュー外でも一部が掛かっている場合の調整
-             const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
-             const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
-             const span = eCol - sCol + 1;
-             const result = [];
+  const lessonItems = lessons.flatMap(l => {
+    const lStart = startOfDay(parseISO(l.startDate));
+    const lEnd = startOfDay(parseISO(l.endDate));
+    if (isAfter(lStart, currentViewEnd) || isBefore(lEnd, currentViewStart)) return [];
 
-             // リソースIDのリストを統合
-             const resourceIdList = [
-             ...(e.resourceIds || []),
-             ...(e.resources || []).map(r => r.id)
-             ];
-             // リソース固有の予定
-             if (resourceIdList.length > 0) {
-             resourceIdList.forEach(resId => {
-             const resourceIdx = filteredResources.findIndex(r => r.id === resId);
-             if (resourceIdx !== -1) {
-             result.push(
-             <div key={`event-${e.id}-${resId}`} 
-                 className="event-card schedule-event-card resource-event-card"
-                 style={{ 
-                   gridColumn: `${sCol} / span ${span}`, 
-                   gridRow: resourceIdx + 4,
-                   backgroundColor: e.color,
-                   cursor: 'pointer'
-                 }}
-                 onDblClick={() => onEventClick?.(e)}
-             >
-              {t(e.name)}
-             </div>
-             );
-             }
-             });
-             }
-             // イベント行（row 3）に表示する場合
-             if (e.showInEventRow !== false || resourceIdList.length === 0) {
-             const level = getPlacementLevel(sCol, sCol + span - 1);
-             const el = (
-             <div key={`event-${e.id}-global`} 
-             className="event-card schedule-event-card"
-             style={{ 
-               gridColumn: `${sCol} / span ${span}`, 
-               gridRow: 3,
-               backgroundColor: e.color,
-               top: `${72 + level * 22}px`,
-               cursor: 'pointer'
-             }}
-             onDblClick={() => onEventClick?.(e)}
-             >
-             {t(e.name)}
-             </div>
-             );
-             row3Placements.push({ id: `event-${e.id}`, start: sCol, end: sCol + span - 1, level, element: el });
-             result.push(el);
-             }
-             return result;
-             });
+    const startDayIdx = displayDates.findIndex(d => isSameDay(d, lStart));
+    const endDayIdx = displayDates.findIndex(d => isSameDay(d, lEnd));
+    const startPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
+    const endPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
+    const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
+    const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
+    const span = eCol - sCol + 1;
+    const subIds = [
+      ...(l.subTeacherIds || []),
+      ...(l.subTeachers || []).map(t => t.id)
+    ];
+    // 関連するリソースIDを特定
+    let targetResIds: string[] = [];
+    if (viewMode === 'room') targetResIds = [l.roomId];
+    else if (viewMode === 'teacher') targetResIds = [l.teacherId, ...subIds];
+    else if (viewMode === 'course') targetResIds = [l.courseId];
 
-             const resourceLabels = filteredResources.map((r, idx) => (
-             <div key={`label-${r.id}`} className="grid-label" style={{ ...stickyLeft, gridColumn: 1, gridRow: idx + 4 }}>
-             {t(r.name)}
-             </div>
-             ));
+    return targetResIds.map(resId => {
+      const resourceIdx = filteredResources.findIndex(r => r.id === resId);
+      if (resourceIdx === -1) return null;
+      const infoItems = [];
+      if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
 
-             const lessonItems = lessons.flatMap(l => {
-             const lStart = startOfDay(parseISO(l.startDate));
-             const lEnd = startOfDay(parseISO(l.endDate));
-             if (isAfter(lStart, currentViewEnd) || isBefore(lEnd, currentViewStart)) return [];
+      const mainTeacherName = getResourceName(l.teacherId);
+      const subTeacherNames = subIds.map(id => getResourceName(id));
 
-             const startDayIdx = displayDates.findIndex(d => isSameDay(d, lStart));
-             const endDayIdx = displayDates.findIndex(d => isSameDay(d, lEnd));
-             const startPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
-             const endPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
-             const sCol = (startDayIdx === -1) ? 2 : startDayIdx * periods.length + startPeriodIdx + 2;
-             const eCol = (endDayIdx === -1) ? (displayDates.length * periods.length + 1) : endDayIdx * periods.length + endPeriodIdx + 2;
-             const span = eCol - sCol + 1;
-             const subIds = [
-             ...(l.subTeacherIds || []),
-             ...(l.subTeachers || []).map(t => t.id)
-             ];
-             // 関連するリソースIDを特定
-             let targetResIds: string[] = [];
-             if (viewMode === 'room') targetResIds = [l.roomId];
-             else if (viewMode === 'teacher') targetResIds = [l.teacherId, ...subIds];
-             else if (viewMode === 'course') targetResIds = [l.courseId];
+      if (viewMode !== 'teacher') {
+        const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+        infoItems.push({ label: labels.teacher, value: allTeachers });
+      } else {
+        if (subTeacherNames.length > 0) {
+          // メイン・サブ講師を分けずに表示（同等に扱う）
+          const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+          infoItems.push({ label: labels.teacher, value: allTeachers });
+        }
+      }
+      if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
 
-             return targetResIds.map(resId => {
-             const resourceIdx = filteredResources.findIndex(r => r.id === resId);
-             if (resourceIdx === -1) return null;
-             const infoItems = [];
-             if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
+      const translatedSubject = t(l.subject);
+      const tooltipText = `${translatedSubject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
 
-             const mainTeacherName = getResourceName(l.teacherId);
-             const subTeacherNames = subIds.map(id => getResourceName(id));
-
-             if (viewMode !== 'teacher') {
-             const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
-             infoItems.push({ label: labels.teacher, value: allTeachers });
-             } else {
-             if (subTeacherNames.length > 0) {
-             // メイン・サブ講師を分けずに表示（同等に扱う）
-             const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
-             infoItems.push({ label: labels.teacher, value: allTeachers });
-             }
-             }
-             if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
-
-             const translatedSubject = t(l.subject);
-             const tooltipText = `${translatedSubject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
-
-             return (
-             <div 
-             key={`lesson-${l.id}-${resId}`} 
-             className="lesson-card"
-             style={{
-             gridColumn: `${sCol} / span ${span}`,
-             gridRow: resourceIdx + 4
-             }}
-             title={tooltipText}
-             >
-             <div className="lesson-subject">{translatedSubject}</div>
-             <div className="lesson-details">
-             {infoItems.map((item, idx) => (
+      return (
+        <div 
+          key={`lesson-${l.id}-${resId}`} 
+          className="lesson-card"
+          style={{
+            gridColumn: `${sCol} / span ${span}`,
+            gridRow: resourceIdx + 4
+          }}
+          title={tooltipText}
+        >
+          <div className="lesson-subject">{translatedSubject}</div>
+          <div className="lesson-details">
+            {infoItems.map((item, idx) => (
               <div key={idx} className="lesson-info">
                 {item.label}: {item.value}
               </div>
-             ))}
-             </div>
-             </div>
-             );
-             }).filter(Boolean);
-             });
+            ))}
+          </div>
+        </div>
+      );
+    }).filter(Boolean);
+  });
 
   const wrapperStyle = {
     overflowX: isDayView ? 'hidden' : 'auto'
@@ -394,7 +383,8 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
         {eventCells}
         {/* レベル別の配置を確保 */}
         {holidayItems}
-        {scheduleEventItems}
+        {globalEventItems}
+        {resourceEventItems}
         {resourceLabels}
         {lessonItems}
       </div>
