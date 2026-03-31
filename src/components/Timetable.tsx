@@ -95,7 +95,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
       <div key={`date-${date.toISOString()}`} 
            className={className} 
            style={{ gridColumn: `${dIdx * periods.length + 2} / span ${periods.length}`, gridRow: 1 }}
-           title={holiday ? t(holiday.name) : undefined}
+           title={holiday ? holiday.name : undefined}
       >
         {dateFormatter.format(date)}
       </div>
@@ -172,7 +172,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
                gridRow: 3,
                top: `${72 + level * 22}px`
              }}>
-             {t(holiday.name)}
+             {holiday.name}
              </div>
              );
              row3Placements.push({ id: `holiday-${date.toISOString()}`, start: startCol, end: endCol - 1, level, element: el });
@@ -202,7 +202,7 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
                    gridRow: 3,
                    top: `${72 + level * 22}px`
                  }}>
-              {t(holiday.name)}
+              {holiday.name}
              </div>
              );
              row3Placements.push({ id: `holiday-range-${holiday.name}`, start: startCol, end: endCol - 1, level, element: el });
