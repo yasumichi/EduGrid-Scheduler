@@ -46,12 +46,13 @@ model Lesson {
   startPeriodId String
   endDate       String
   endPeriodId   String
-  roomId        String
-  teacherId     String
+  roomId        String?
+  teacherId     String?
   courseId      String
+  location      String?
   course        Resource   @relation("CourseLessons", fields: [courseId], references: [id])
-  room          Resource   @relation("RoomLessons", fields: [roomId], references: [id])
-  teacher       Resource   @relation("TeacherLessons", fields: [teacherId], references: [id])
+  room          Resource?  @relation("RoomLessons", fields: [roomId], references: [id])
+  teacher       Resource?  @relation("TeacherLessons", fields: [teacherId], references: [id])
   subTeachers   Resource[] @relation("SubTeacherLessons")
 }
 

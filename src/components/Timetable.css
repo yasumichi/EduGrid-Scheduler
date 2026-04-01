@@ -206,6 +206,10 @@
   white-space: nowrap;
 }
 
+.lesson-card.no-main-teacher {
+  color: #333; /* 明るい背景に合わせて文字を暗く */
+}
+
 .lesson-subject {
   font-weight: bold;
   font-size: 0.8rem;

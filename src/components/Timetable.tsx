@@ -318,47 +318,60 @@ export function Timetable({ periods, resources, lessons, events, viewMode, viewT
     ];
     // 関連するリソースIDを特定
     let targetResIds: string[] = [];
-    if (viewMode === 'room') targetResIds = [l.roomId];
-    else if (viewMode === 'teacher') targetResIds = [l.teacherId, ...subIds];
+    if (viewMode === 'room' && l.roomId) targetResIds = [l.roomId];
+    else if (viewMode === 'teacher') {
+      const allTeacherIds = [];
+      if (l.teacherId) allTeacherIds.push(l.teacherId);
+      if (subIds.length > 0) allTeacherIds.push(...subIds);
+      targetResIds = allTeacherIds;
+    }
     else if (viewMode === 'course') targetResIds = [l.courseId];
 
     return targetResIds.map(resId => {
       const resourceIdx = filteredResources.findIndex(r => r.id === resId);
       if (resourceIdx === -1) return null;
       const infoItems = [];
-      if (viewMode !== 'room') infoItems.push({ label: labels.room, value: getResourceName(l.roomId) });
 
-      const mainTeacherName = getResourceName(l.teacherId);
+      const roomValue = l.roomId ? getResourceName(l.roomId) : (l.location || t('No room'));
+      if (viewMode !== 'room') infoItems.push({ label: labels.room, value: roomValue });
+
+      const mainTeacherName = l.teacherId ? getResourceName(l.teacherId) : t('No main teacher');
       const subTeacherNames = subIds.map(id => getResourceName(id));
 
       if (viewMode !== 'teacher') {
-        const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+        const allTeachers = [mainTeacherName, ...subTeacherNames].filter(n => n !== t('No main teacher')).join(', ') || t('No teacher');
         infoItems.push({ label: labels.teacher, value: allTeachers });
       } else {
-        if (subTeacherNames.length > 0) {
-          // メイン・サブ講師を分けずに表示（同等に扱う）
-          const allTeachers = [mainTeacherName, ...subTeacherNames].join(', ');
+        if (subTeacherNames.length > 0 || l.teacherId) {
+          const allTeachers = [
+            ...(l.teacherId ? [getResourceName(l.teacherId)] : []),
+            ...subTeacherNames
+          ].join(', ');
           infoItems.push({ label: labels.teacher, value: allTeachers });
         }
       }
       if (viewMode !== 'course') infoItems.push({ label: labels.course, value: getResourceName(l.courseId) });
 
       const translatedSubject = t(l.subject);
-      const tooltipText = `${translatedSubject}\n` + infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
+      const tooltipText = `${translatedSubject}\n` + 
+                         (l.location ? `${t('Location')}: ${l.location}\n` : '') +
+                         infoItems.map(item => `${item.label}: ${item.value}`).join('\n');
 
       return (
         <div 
           key={`lesson-${l.id}-${resId}`} 
-          className="lesson-card"
+          className={`lesson-card ${!l.teacherId ? 'no-main-teacher' : ''}`}
           style={{
             gridColumn: `${sCol} / span ${span}`,
             gridRow: resourceIdx + 4,
-            cursor: 'pointer'
+            cursor: 'pointer',
+            backgroundColor: !l.teacherId ? '#e884fa' : undefined 
           }}
           title={tooltipText}
           onDblClick={() => onLessonClick?.(l)}
         >
-          <div className="lesson-subject">{translatedSubject}</div>          <div className="lesson-details">
+          <div className="lesson-subject">{translatedSubject}</div>
+          <div className="lesson-details">
             {infoItems.map((item, idx) => (
               <div key={idx} className="lesson-info">
                 {item.label}: {item.value}

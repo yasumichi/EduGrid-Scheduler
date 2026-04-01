@@ -24,6 +24,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
     subTeacherIds: string[];
     roomId: string;
     courseId: string;
+    location: string;
     startDate: string;
     startPeriodId: string;
     endDate: string;
@@ -32,9 +33,10 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
     id: initialLesson?.id,
     subject: initialLesson?.subject || '',
     teacherId: initialLesson?.teacherId || '',
-    subTeacherIds: initialLesson?.subTeacherIds || [],
+    subTeacherIds: initialLesson?.subTeacherIds || (initialLesson?.subTeachers || []).map(t => t.id),
     roomId: initialLesson?.roomId || '',
     courseId: initialLesson?.courseId || '',
+    location: initialLesson?.location || '',
     startDate: initialLesson?.startDate || '',
     startPeriodId: initialLesson?.startPeriodId || periods[0]?.id || 'p1',
     endDate: initialLesson?.endDate || initialLesson?.startDate || '',
@@ -70,8 +72,14 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
 
   const handleSave = async () => {
     // Basic validation
-    if (!formData.courseId || !formData.subject || !formData.teacherId || !formData.roomId) {
-      alert(t('Please select all required fields (Course, Subject, Teacher, Room)'));
+    if (!formData.courseId || !formData.subject) {
+      alert(t('Please select all required fields (Course, Subject)'));
+      return;
+    }
+
+    // Room or Location validation
+    if (!formData.roomId && !formData.location) {
+      alert(t('Please select a Room or enter a Location'));
       return;
     }
 
@@ -82,10 +90,10 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
     }
 
     // Period order validation (if same day)
+    const sPeriodIdx = periods.findIndex(p => p.id === formData.startPeriodId);
+    const ePeriodIdx = periods.findIndex(p => p.id === formData.endPeriodId);
     if (formData.startDate === formData.endDate) {
-      const sIdx = periods.findIndex(p => p.id === formData.startPeriodId);
-      const eIdx = periods.findIndex(p => p.id === formData.endPeriodId);
-      if (eIdx < sIdx) {
+      if (ePeriodIdx < sPeriodIdx) {
         alert(t('End period cannot be before start period'));
         return;
       }
@@ -100,6 +108,36 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
       }
     }
 
+    // Double-booking validation
+    const checkResources = [
+      formData.roomId,
+      formData.teacherId,
+      ...formData.subTeacherIds
+    ].filter(id => id && id !== '');
+
+    const isDoubleBooked = lessons.some(l => {
+      if (l.id === formData.id) return false;
+
+      // Check time overlap
+      const lSPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
+      const lEPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
+      
+      const timeOverlap = (formData.startDate <= l.endDate && formData.endDate >= l.startDate) &&
+                         (sPeriodIdx <= lEPeriodIdx && ePeriodIdx >= lSPeriodIdx);
+
+      if (!timeOverlap) return false;
+
+      // Check resource overlap
+      const lResources = [l.roomId, l.teacherId, ...(l.subTeacherIds || [])].filter(id => id && id !== '');
+      return checkResources.some(rid => lResources.includes(rid));
+    });
+
+    if (isDoubleBooked) {
+      if (!confirm(t('Warning: One or more resources are already booked for this time. Do you want to proceed anyway?'))) {
+        return;
+      }
+    }
+
     try {
       const res = await fetch(`${backendUrl}/lessons`, {
         method: 'POST',
@@ -107,7 +145,12 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          teacherId: formData.teacherId || null,
+          roomId: formData.roomId || null,
+          location: formData.location || null
+        })
       });
       if (res.ok) {
         onUpdate();
@@ -157,7 +200,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
 
         <div className="lesson-manager-content">
           <div className="form-group">
-            <label>{t('Course')}</label>
+            <label>{t('Course')} *</label>
             <select 
               value={formData.courseId} 
               onChange={(e) => setFormData({ ...formData, courseId: e.currentTarget.value, subject: '' })}
@@ -168,7 +211,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
           </div>
 
           <div className="form-group">
-            <label>{t('Subject')}</label>
+            <label>{t('Subject')} *</label>
             <select 
               value={formData.subject} 
               onChange={(e) => setFormData({ ...formData, subject: e.currentTarget.value })}
@@ -185,7 +228,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
 
           <div className="form-row">
             <div className="form-group">
-              <label>{t('Start Date')}</label>
+              <label>{t('Start Date')} *</label>
               <input 
                 type="date" 
                 value={formData.startDate} 
@@ -193,7 +236,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
               />
             </div>
             <div className="form-group">
-              <label>{t('End Date')}</label>
+              <label>{t('End Date')} *</label>
               <input 
                 type="date" 
                 value={formData.endDate} 
@@ -223,15 +266,26 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
             </div>
           </div>
 
-          <div className="form-group">
-            <label>{t('Room')}</label>
-            <select 
-              value={formData.roomId} 
-              onChange={(e) => setFormData({ ...formData, roomId: e.currentTarget.value })}
-            >
-              <option value="">{t('Select Room')}</option>
-              {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
+          <div className="form-row">
+            <div className="form-group">
+              <label>{t('Room')}</label>
+              <select 
+                value={formData.roomId} 
+                onChange={(e) => setFormData({ ...formData, roomId: e.currentTarget.value })}
+              >
+                <option value="">{t('Select Room')}</option>
+                {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>{t('Location (if no room)')}</label>
+              <input 
+                type="text" 
+                value={formData.location} 
+                onInput={(e) => setFormData({ ...formData, location: e.currentTarget.value })}
+                placeholder={t('e.g. Online, Gym')}
+              />
+            </div>
           </div>
 
           <div className="form-group">

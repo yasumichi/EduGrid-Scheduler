@@ -176,41 +176,72 @@ app.post('/api/lessons', verifyToken, async (req: AuthRequest, res) => {
   if (req.user?.role !== UserRole.ADMIN) {
     return res.status(403).json({ error: 'Access denied. Admin role required.' });
   }
-  const { id, subject, teacherId, subTeacherIds, roomId, courseId, startDate, startPeriodId, endDate, endPeriodId } = req.body;
+  const { id, subject, teacherId, subTeacherIds, roomId, courseId, location, startDate, startPeriodId, endDate, endPeriodId } = req.body;
   try {
     const subTeachersConnect = subTeacherIds?.map((tid: string) => ({ id: tid })) || [];
-    let lesson;
-    const data = {
+    
+    // 共通のデータ
+    const commonData = {
       subject,
-      teacherId,
-      roomId,
-      courseId,
+      location: location || null,
       startDate,
       startPeriodId,
       endDate,
       endPeriodId,
-      subTeachers: {
-        set: [],
-        connect: subTeachersConnect
-      }
     };
 
     if (id) {
-      lesson = await prisma.lesson.update({
+      // 更新 (Update)
+      const data: any = {
+        ...commonData,
+        course: { connect: { id: courseId } },
+        subTeachers: {
+          set: [],
+          connect: subTeachersConnect
+        }
+      };
+
+      if (teacherId) {
+        data.teacher = { connect: { id: teacherId } };
+      } else {
+        data.teacher = { disconnect: true };
+      }
+
+      if (roomId) {
+        data.room = { connect: { id: roomId } };
+      } else {
+        data.room = { disconnect: true };
+      }
+
+      const lesson = await prisma.lesson.update({
         where: { id },
         data,
         include: { subTeachers: true }
       });
+      res.json(lesson);
     } else {
-      // Create cannot use 'set'
-      const createData = { ...data };
-      delete (createData as any).subTeachers.set;
-      lesson = await prisma.lesson.create({
-        data: createData,
+      // 新規作成 (Create)
+      const data: any = {
+        ...commonData,
+        course: { connect: { id: courseId } },
+        subTeachers: {
+          connect: subTeachersConnect
+        }
+      };
+
+      if (teacherId) {
+        data.teacher = { connect: { id: teacherId } };
+      }
+      if (roomId) {
+        data.room = { connect: { id: roomId } };
+      }
+
+      const lesson = await prisma.lesson.create({
+        data,
         include: { subTeachers: true }
       });
+      res.json(lesson);
     }
-    res.json(lesson);
   } catch (error) {
     console.error('Failed to save lesson:', error);
     res.status(500).json({ error: 'Failed to save lesson' });

@@ -63,11 +63,12 @@ export interface ScheduleEvent {
 export interface Lesson {
   id: string;
   subject: string;
-  teacherId: string;
+  teacherId?: string;
   subTeacherIds?: string[]; // サブ講師
   subTeachers?: { id: string }[]; // バックエンドからのリレーション
-  roomId: string;
+  roomId?: string;
   courseId: string;
+  location?: string;
   startDate: string;   // 開始日 "2026-03-26"
   startPeriodId: string; // 開始時限 "p1"
   endDate: string;     // 終了日 "2026-03-27"
@@ -104,7 +105,7 @@ export const MOCK_RESOURCES = generateResources();
 const generateLessons = (): Lesson[] => {
   const lessons: Lesson[] = [];
   const subjects = ['Math', 'English', 'Physics', 'Japanese', 'Chemistry', 'History', 'Geography', 'Biology', 'Social', 'Info', 'Arts', 'PE'];
-  const baseDate = '2026-03-26';
+  const baseDate = new Date().toISOString().split('T')[0];
 
   // 基本的な単発の授業
   for (let i = 1; i <= 30; i++) {

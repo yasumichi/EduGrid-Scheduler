@@ -76,7 +76,8 @@ const resources = {
       "Are you sure you want to delete this lesson?": "Are you sure you want to delete this lesson?",
       "Lesson date must be between": "Lesson date must be between",
       "and": "and",
-      "Please select all required fields (Course, Subject, Teacher, Room)": "Please select all required fields (Course, Subject, Teacher, Room)",
+      "Please select all required fields (Course, Subject)": "Please select all required fields (Course, Subject)",
+      "Please select a Room or enter a Location": "Please select a Room or enter a Location",
       "End date cannot be before start date": "End date cannot be before start date",
       "End period cannot be before start period": "End period cannot be before start period"
     }
@@ -154,7 +155,8 @@ const resources = {
       "Are you sure you want to delete this lesson?": "この授業を削除してもよろしいですか？",
       "Lesson date must be between": "授業の日付は ",
       "and": " の間に設定してください",
-      "Please select all required fields (Course, Subject, Teacher, Room)": "必須項目（講座、課目、講師、教室）をすべて選択してください",
+      "Please select all required fields (Course, Subject)": "必須項目（講座、課目）をすべて選択してください",
+      "Please select a Room or enter a Location": "教室を選択するか、場所を入力してください",
       "End date cannot be before start date": "終了日は開始日より前の日付に設定できません",
       "End period cannot be before start period": "終了時限は開始時限より前の時間に設定できません",
       "Evacuation Drill": "全館避難訓練",
