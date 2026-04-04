@@ -4,7 +4,6 @@ import { Resource, ResourceLabels } from '../types';
 import './RoomManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -12,7 +11,7 @@ interface Props {
   labels: ResourceLabels;
 }
 
-export function RoomManager({ token, backendUrl, onClose, onUpdate, resources, labels }: Props) {
+export function RoomManager({ backendUrl, onClose, onUpdate, resources, labels }: Props) {
   const { t } = useTranslation();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
@@ -52,9 +51,9 @@ export function RoomManager({ token, backendUrl, onClose, onUpdate, resources, l
       const res = await fetch(`${backendUrl}/rooms`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           id: selectedRoomId,
           ...formData
@@ -78,7 +77,7 @@ export function RoomManager({ token, backendUrl, onClose, onUpdate, resources, l
     try {
       const res = await fetch(`${backendUrl}/rooms/${selectedRoomId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         onUpdate();

@@ -4,14 +4,13 @@ import { ResourceLabels } from '../types';
 import './PeriodManager.css'; // Re-use PeriodManager overlay/box styles
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: (labels: ResourceLabels) => void;
   initialLabels: ResourceLabels;
 }
 
-export function LabelManager({ token, backendUrl, onClose, onUpdate, initialLabels }: Props) {
+export function LabelManager({ backendUrl, onClose, onUpdate, initialLabels }: Props) {
   const { t } = useTranslation();
   const [labels, setLabels] = useState<ResourceLabels>(initialLabels);
 
@@ -24,9 +23,9 @@ export function LabelManager({ token, backendUrl, onClose, onUpdate, initialLabe
       const res = await fetch(`${backendUrl}/labels`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ labels })
       });
       if (res.ok) {

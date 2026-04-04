@@ -4,7 +4,6 @@ import { Resource, ResourceLabels } from '../types';
 import './CourseManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -12,7 +11,7 @@ interface Props {
   labels: ResourceLabels;
 }
 
-export function CourseManager({ token, backendUrl, onClose, onUpdate, resources, labels }: Props) {
+export function CourseManager({ backendUrl, onClose, onUpdate, resources, labels }: Props) {
   const { t } = useTranslation();
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
@@ -165,9 +164,9 @@ export function CourseManager({ token, backendUrl, onClose, onUpdate, resources,
       const res = await fetch(`${backendUrl}/courses`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           id: selectedCourseId,
           ...formData
@@ -191,7 +190,7 @@ export function CourseManager({ token, backendUrl, onClose, onUpdate, resources,
     try {
       const res = await fetch(`${backendUrl}/courses/${selectedCourseId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         onUpdate();

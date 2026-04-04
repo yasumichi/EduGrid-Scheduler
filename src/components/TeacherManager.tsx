@@ -4,7 +4,6 @@ import { Resource, ResourceLabels, User } from '../types';
 import './TeacherManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -12,7 +11,7 @@ interface Props {
   labels: ResourceLabels;
 }
 
-export function TeacherManager({ token, backendUrl, onClose, onUpdate, resources, labels }: Props) {
+export function TeacherManager({ backendUrl, onClose, onUpdate, resources, labels }: Props) {
   const { t } = useTranslation();
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -35,7 +34,7 @@ export function TeacherManager({ token, backendUrl, onClose, onUpdate, resources
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${backendUrl}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -75,9 +74,9 @@ export function TeacherManager({ token, backendUrl, onClose, onUpdate, resources
       const res = await fetch(`${backendUrl}/teachers`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           id: selectedTeacherId,
           ...formData
@@ -101,7 +100,7 @@ export function TeacherManager({ token, backendUrl, onClose, onUpdate, resources
     try {
       const res = await fetch(`${backendUrl}/teachers/${selectedTeacherId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         onUpdate();

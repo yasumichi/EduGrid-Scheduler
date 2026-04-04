@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient, UserRole, ResourceType } from '@prisma/client';
@@ -20,9 +21,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 app.use(cors({
-  origin: FRONTEND_URL
+  origin: FRONTEND_URL,
+  credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 // --- Authentication Routes ---
 
@@ -55,12 +58,41 @@ app.post('/api/auth/login', async (req, res) => {
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    
+    // Cookie に保存
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // または 'strict'
+      maxAge: 24 * 60 * 60 * 1000 // 24時間
+    });
+
     res.json({
-      token,
       user: { id: user.id, email: user.email, role: user.role }
     });
   } catch (error) {
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ログアウト
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ message: 'Logged out successfully' });
+});
+
+// セッション確認 (自分自身の情報取得)
+app.get('/api/auth/me', verifyToken, async (req: AuthRequest, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, email: true, role: true }
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 

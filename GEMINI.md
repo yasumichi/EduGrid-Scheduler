@@ -23,7 +23,9 @@
 ## 主要要件 (Key Features)
 
 - **認証 & 認可 (Auth & RBAC):**
-  - JWT ベースのログイン機能。セッションは `localStorage` で永続化.
+  - JWT ベースのログイン機能。セッションは `HttpOnly` Cookie にて管理（以前の `localStorage` から移行）.
+  - ページ読み込み時に `/api/auth/me` を呼び出し、サーバーサイドで Cookie を検証してセッションを復元。
+  - ログアウト時はサーバー側で Cookie をクリア。
   - ロール（ADMIN, TEACHER, STUDENT）によるアクセス制御（RBAC）の実装。
   - ログイン前はスケジュールの閲覧を制限。
   - 講師ロールのユーザーは、特定のリソース（講師）と 1:1 で紐付けることが可能。

@@ -4,13 +4,12 @@ import { TimePeriod } from '../types';
 import './PeriodManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: (periods: TimePeriod[]) => void;
 }
 
-export function PeriodManager({ token, backendUrl, onClose, onUpdate }: Props) {
+export function PeriodManager({ backendUrl, onClose, onUpdate }: Props) {
   const { t } = useTranslation();
   const [periods, setPeriods] = useState<Partial<TimePeriod>[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +21,7 @@ export function PeriodManager({ token, backendUrl, onClose, onUpdate }: Props) {
   const fetchPeriods = async () => {
     try {
       const res = await fetch(`${backendUrl}/periods`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -54,9 +53,9 @@ export function PeriodManager({ token, backendUrl, onClose, onUpdate }: Props) {
       const res = await fetch(`${backendUrl}/periods`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ periods })
       });
       if (res.ok) {

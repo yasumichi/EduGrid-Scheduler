@@ -36,10 +36,10 @@ export function App() {
   const resources = useSignal<Resource[]>([]);
   const lessons = useSignal<Lesson[]>([]);
   const events = useSignal<ScheduleEvent[]>([]);
+  const sessionRestored = useSignal<boolean>(false);
 
   // Auth signals
   const user = useSignal<User | null>(null);
-  const token = useSignal<string | null>(null);
   const authError = useSignal<string | undefined>(undefined);
 
   // リソースの表示名設定
@@ -53,30 +53,36 @@ export function App() {
     mainRoom: ''
   });
 
-  // 初期化時にlocalStorageからセッション復元
+  // 初期化時に /auth/me でセッション復元
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
-    const savedUser = localStorage.getItem('auth_user');
-    if (savedToken && savedUser) {
-      token.value = savedToken;
-      user.value = JSON.parse(savedUser);
-    }
+    const restoreSession = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/me`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          user.value = data;
+        }
+      } catch (err) {
+        console.error('Session restoration failed:', err);
+      } finally {
+        sessionRestored.value = true;
+      }
+    };
+    restoreSession();
   }, []);
 
   const fetchData = async () => {
-    if (!token.value) return;
+    if (!user.value) return;
     try {
-      const headers = {
-        'Authorization': `Bearer ${token.value}`
-      };
-
       const responses = await Promise.all([
-        fetch(`${BACKEND_URL}/resources`, { headers }),
-        fetch(`${BACKEND_URL}/lessons`, { headers }),
-        fetch(`${BACKEND_URL}/events`, { headers }),
-        fetch(`${BACKEND_URL}/holidays`, { headers }),
-        fetch(`${BACKEND_URL}/periods`, { headers }),
-        fetch(`${BACKEND_URL}/labels`, { headers })
+        fetch(`${BACKEND_URL}/resources`, { credentials: 'include' }),
+        fetch(`${BACKEND_URL}/lessons`, { credentials: 'include' }),
+        fetch(`${BACKEND_URL}/events`, { credentials: 'include' }),
+        fetch(`${BACKEND_URL}/holidays`, { credentials: 'include' }),
+        fetch(`${BACKEND_URL}/periods`, { credentials: 'include' }),
+        fetch(`${BACKEND_URL}/labels`, { credentials: 'include' })
       ]);
 
       const failed = responses.find(r => !r.ok);
@@ -117,10 +123,10 @@ export function App() {
 
 
   useEffect(() => {
-    if (token.value) {
+    if (user.value) {
       fetchData();
     }
-  }, [token.value]);
+  }, [user.value]);
 
   const handleLogin = async (email: string, pass: string) => {
     authError.value = undefined;
@@ -128,7 +134,8 @@ export function App() {
       const res = await fetch(`${BACKEND_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass })
+        body: JSON.stringify({ email, password: pass }),
+        credentials: 'include'
       });
 
       const data: AuthResponse & { error?: string } = await res.json();
@@ -138,23 +145,30 @@ export function App() {
         return;
       }
 
-      token.value = data.token;
       user.value = data.user;
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('auth_user', JSON.stringify(data.user));
     } catch (err) {
       authError.value = 'Server connection failed';
     }
   };
 
-  const handleLogout = () => {
-    token.value = null;
-    user.value = null;
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+  const handleLogout = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      user.value = null;
+    }
   };
 
-  if (!token.value) {
+  if (!sessionRestored.value) {
+    return <div className="loading">Loading session...</div>;
+  }
+
+  if (!user.value) {
     return <Login onLogin={handleLogin} error={authError.value} />;
   }
 
@@ -362,18 +376,16 @@ export function App() {
         />
       </div>
 
-      {showPeriodManager.value && token.value && (
+      {showPeriodManager.value && (
         <PeriodManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => showPeriodManager.value = false}
           onUpdate={(newPeriods) => periods.value = newPeriods}
         />
       )}
 
-      {showLabelManager.value && token.value && (
+      {showLabelManager.value && (
         <LabelManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => showLabelManager.value = false}
           onUpdate={(newLabels) => resourceLabels.value = newLabels}
@@ -381,9 +393,8 @@ export function App() {
         />
       )}
 
-      {showCourseManager.value && token.value && (
+      {showCourseManager.value && (
         <CourseManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => showCourseManager.value = false}
           onUpdate={fetchData}
@@ -392,9 +403,8 @@ export function App() {
         />
       )}
 
-      {showRoomManager.value && token.value && (
+      {showRoomManager.value && (
         <RoomManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => showRoomManager.value = false}
           onUpdate={fetchData}
@@ -403,9 +413,8 @@ export function App() {
         />
       )}
 
-      {showTeacherManager.value && token.value && (
+      {showTeacherManager.value && (
         <TeacherManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => showTeacherManager.value = false}
           onUpdate={fetchData}
@@ -414,9 +423,8 @@ export function App() {
         />
       )}
 
-      {showEventManager.value && token.value && (
+      {showEventManager.value && (
         <EventManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => {
             showEventManager.value = false;
@@ -429,9 +437,8 @@ export function App() {
         />
       )}
 
-      {showLessonManager.value && token.value && (
+      {showLessonManager.value && (
         <LessonManager 
-          token={token.value} 
           backendUrl={BACKEND_URL} 
           onClose={() => {
             showLessonManager.value = false;

@@ -4,7 +4,6 @@ import { ScheduleEvent, TimePeriod, Resource } from '../types';
 import './EventManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -13,7 +12,7 @@ interface Props {
   initialEvent?: Partial<ScheduleEvent>; // 編集時は既存、新規時は日付・時限のみ
 }
 
-export function EventManager({ token, backendUrl, onClose, onUpdate, periods, resources, initialEvent }: Props) {
+export function EventManager({ backendUrl, onClose, onUpdate, periods, resources, initialEvent }: Props) {
   const { t } = useTranslation();
   const [formData, setFormData] = useState<{
     id?: string;
@@ -42,9 +41,9 @@ export function EventManager({ token, backendUrl, onClose, onUpdate, periods, re
       const res = await fetch(`${backendUrl}/events`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -65,7 +64,7 @@ export function EventManager({ token, backendUrl, onClose, onUpdate, periods, re
     try {
       const res = await fetch(`${backendUrl}/events/${formData.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         onUpdate();

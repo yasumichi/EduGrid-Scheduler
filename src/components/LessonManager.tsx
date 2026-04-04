@@ -4,7 +4,6 @@ import { Lesson, TimePeriod, Resource, ResourceLabels } from '../types';
 import './LessonManager.css';
 
 interface Props {
-  token: string;
   backendUrl: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -15,7 +14,7 @@ interface Props {
   initialLesson?: Partial<Lesson>;
 }
 
-export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, resources, lessons, labels, initialLesson }: Props) {
+export function LessonManager({ backendUrl, onClose, onUpdate, periods, resources, lessons, labels, initialLesson }: Props) {
   const { t } = useTranslation();
   
   const [formData, setFormData] = useState<{
@@ -157,9 +156,9 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
       const res = await fetch(`${backendUrl}/lessons`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           teacherId: formData.teacherId || null,
@@ -185,7 +184,7 @@ export function LessonManager({ token, backendUrl, onClose, onUpdate, periods, r
     try {
       const res = await fetch(`${backendUrl}/lessons/${formData.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         onUpdate();
