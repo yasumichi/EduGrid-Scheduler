@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'preact/hooks';
 import { useTranslation } from 'react-i18next';
 import { Lesson, TimePeriod, Resource, ResourceLabels } from '../types';
+import { parseISO, differenceInDays } from 'date-fns';
 import './LessonManager.css';
 
 interface Props {
@@ -56,7 +57,7 @@ export function LessonManager({ backendUrl, onClose, onUpdate, periods, resource
     if (!formData.id && selectedCourse?.mainRoomId) {
       setFormData(prev => ({
         ...prev,
-        roomId: prev.roomId || selectedCourse.mainRoomId
+        roomId: prev.roomId || selectedCourse.mainRoomId || ''
       }));
     }
   }, [formData.courseId, selectedCourse]);
@@ -73,7 +74,14 @@ export function LessonManager({ backendUrl, onClose, onUpdate, periods, resource
         .reduce((sum, l) => {
           const sIdx = periods.findIndex(p => p.id === l.startPeriodId);
           const eIdx = periods.findIndex(p => p.id === l.endPeriodId);
-          return sum + (eIdx - sIdx + 1);
+          if (sIdx === -1 || eIdx === -1) return sum;
+
+          if (l.startDate === l.endDate) {
+            return sum + (eIdx - sIdx + 1);
+          } else {
+            const numDays = differenceInDays(parseISO(l.endDate), parseISO(l.startDate));
+            return sum + (periods.length - sIdx) + (numDays - 1) * periods.length + (eIdx + 1);
+          }
         }, 0);
 
       return {
@@ -129,15 +137,22 @@ export function LessonManager({ backendUrl, onClose, onUpdate, periods, resource
       ...formData.subTeacherIds
     ].filter(id => id && id !== '');
 
+    const getAbsTime = (date: string, pId: string) => {
+      const pIdx = periods.findIndex(p => p.id === pId);
+      return `${date}-${pIdx.toString().padStart(3, '0')}`;
+    };
+
+    const formStart = getAbsTime(formData.startDate, formData.startPeriodId);
+    const formEnd = getAbsTime(formData.endDate, formData.endPeriodId);
+
     const isDoubleBooked = lessons.some(l => {
       if (l.id === formData.id) return false;
 
-      // Check time overlap
-      const lSPeriodIdx = periods.findIndex(p => p.id === l.startPeriodId);
-      const lEPeriodIdx = periods.findIndex(p => p.id === l.endPeriodId);
+      // Check time overlap using absolute timestamps (date + period index)
+      const lStart = getAbsTime(l.startDate, l.startPeriodId);
+      const lEnd = getAbsTime(l.endDate, l.endPeriodId);
       
-      const timeOverlap = (formData.startDate <= l.endDate && formData.endDate >= l.startDate) &&
-                         (sPeriodIdx <= lEPeriodIdx && ePeriodIdx >= lSPeriodIdx);
+      const timeOverlap = formStart <= lEnd && lStart <= formEnd;
 
       if (!timeOverlap) return false;
 
