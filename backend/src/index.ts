@@ -514,6 +514,90 @@ app.get('/api/holidays', verifyToken, async (req, res) => {
   }
 });
 
+// 祝日作成 (ADMIN のみ)
+app.post('/api/holidays', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
+  const { name, date, start, end } = req.body;
+  try {
+    const holiday = await prisma.holiday.create({
+      data: { name, date, start, end }
+    });
+    res.json(holiday);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create holiday' });
+  }
+});
+
+// 祝日更新 (ADMIN のみ)
+app.put('/api/holidays/:id', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
+  const { id } = req.params;
+  const { name, date, start, end } = req.body;
+  try {
+    const holiday = await prisma.holiday.update({
+      where: { id },
+      data: { name, date, start, end }
+    });
+    res.json(holiday);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update holiday' });
+  }
+});
+
+// 祝日削除 (ADMIN のみ)
+app.delete('/api/holidays/:id', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
+  const { id } = req.params;
+  try {
+    await prisma.holiday.delete({ where: { id } });
+    res.json({ message: 'Holiday deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete holiday' });
+  }
+});
+
+// Nager.Date からのインポート (ADMIN のみ)
+app.post('/api/holidays/import-nager', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
+  const { year, countryCode } = req.body;
+  try {
+    const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`);
+    if (!response.ok) throw new Error('Nager.Date API failed');
+    const nagerHolidays: any[] = await response.json();
+    
+    const holidays = await Promise.all(nagerHolidays.map(nh => 
+      prisma.holiday.create({
+        data: {
+          name: nh.localName || nh.name,
+          date: nh.date
+        }
+      })
+    ));
+    res.json(holidays);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to import holidays from Nager.Date' });
+  }
+});
+
+// JSON ファイルからのインポート (ADMIN のみ)
+app.post('/api/holidays/import-json', verifyToken, async (req: AuthRequest, res) => {
+  if (req.user?.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
+  const { holidays: nagerHolidays } = req.body;
+  try {
+    const holidays = await Promise.all(nagerHolidays.map((nh: any) => 
+      prisma.holiday.create({
+        data: {
+          name: nh.localName || nh.name,
+          date: nh.date
+        }
+      })
+    ));
+    res.json(holidays);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to import holidays from JSON' });
+  }
+});
+
 // 時限一覧取得 (認証必須)
 app.get('/api/periods', verifyToken, async (req, res) => {
   try {

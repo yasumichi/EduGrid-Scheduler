@@ -85,6 +85,7 @@ export interface Lesson {
 export type ViewType = 'day' | 'week' | 'month' | 'year';
 
 export interface Holiday {
+  id: string;
   date?: string;
   start?: string;
   end?: string;
@@ -199,10 +200,10 @@ export const MOCK_EVENTS: ScheduleEvent[] = [
 ];
 
 export const MOCK_HOLIDAYS: Holiday[] = [
-  { date: '2026-01-01', name: 'New Year\'s Day' },
-  { date: '2026-02-11', name: 'Foundation Day' },
-  { date: '2026-02-23', name: 'Emperor\'s Birthday' },
-  { date: '2026-03-20', name: 'Vernal Equinox Day' },
-  { date: '2026-04-29', name: 'Showa Day' },
-  { start: '2026-12-29', end: '2027-01-03', name: 'Winter Holidays' }
+  { id: 'h1', date: '2026-01-01', name: 'New Year\'s Day' },
+  { id: 'h2', date: '2026-02-11', name: 'Foundation Day' },
+  { id: 'h3', date: '2026-02-23', name: 'Emperor\'s Birthday' },
+  { id: 'h4', date: '2026-03-20', name: 'Vernal Equinox Day' },
+  { id: 'h5', date: '2026-04-29', name: 'Showa Day' },
+  { id: 'h6', start: '2026-12-29', end: '2027-01-03', name: 'Winter Holidays' }
 ];

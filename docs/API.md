@@ -200,6 +200,48 @@ Fetches all holidays.
 *   **Authentication**: Required (JWT).
 *   **Response Body**: Array of `Holiday` objects.
 
+#### `POST /api/holidays`
+Creates a new holiday.
+
+*   **Authentication**: Required (JWT, ADMIN role).
+*   **Request Body**:
+    *   `name` (string, required): Holiday name.
+    *   `date` (string, optional): Single date (YYYY-MM-DD).
+    *   `start` (string, optional): Start date for range.
+    *   `end` (string, optional): End date for range.
+*   **Response Body**: The created `Holiday` object.
+
+#### `PUT /api/holidays/:id`
+Updates an existing holiday.
+
+*   **Authentication**: Required (JWT, ADMIN role).
+*   **Request Body**:
+    *   Same fields as `POST /api/holidays`.
+*   **Response Body**: The updated `Holiday` object.
+
+#### `DELETE /api/holidays/:id`
+Deletes a holiday.
+
+*   **Authentication**: Required (JWT, ADMIN role).
+*   **Response Body**: `{ message: string }`.
+
+#### `POST /api/holidays/import-nager`
+Imports holidays for a specific year and country from Nager.Date API.
+
+*   **Authentication**: Required (JWT, ADMIN role).
+*   **Request Body**:
+    *   `year` (number, required): Year to import (e.g., 2026).
+    *   `countryCode` (string, required): Country code (e.g., "JP").
+*   **Response Body**: Array of created `Holiday` objects.
+
+#### `POST /api/holidays/import-json`
+Imports holidays from a JSON array (Nager.Date format).
+
+*   **Authentication**: Required (JWT, ADMIN role).
+*   **Request Body**:
+    *   `holidays` (array, required): Array of Nager.Date holiday objects (containing `localName`/`name` and `date`).
+*   **Response Body**: Array of created `Holiday` objects.
+
 #### `GET /api/periods`
 Fetches all time periods.
 

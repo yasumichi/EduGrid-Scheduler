@@ -10,6 +10,7 @@ import { RoomManager } from './components/RoomManager';
 import { TeacherManager } from './components/TeacherManager';
 import { EventManager } from './components/EventManager';
 import { LessonManager } from './components/LessonManager';
+import { HolidayManager } from './components/HolidayManager';
 import { Resource, Lesson, ScheduleEvent, ResourceType, ViewType, Holiday, ResourceLabels, User, AuthResponse, TimePeriod } from './types';
 import { format, addDays, getYear, getMonth, parseISO } from 'date-fns';
 
@@ -30,6 +31,7 @@ export function App() {
   const showTeacherManager = useSignal<boolean>(false);
   const showEventManager = useSignal<boolean>(false);
   const showLessonManager = useSignal<boolean>(false);
+  const showHolidayManager = useSignal<boolean>(false);
   const editingEvent = useSignal<Partial<ScheduleEvent> | null>(null);
   const editingLesson = useSignal<Partial<Lesson> | null>(null);
   const showSettingsDropdown = useSignal<boolean>(false);
@@ -256,6 +258,15 @@ export function App() {
                       >
                         {t('Manage {{resource}}', { resource: resourceLabels.value.course })}
                       </button>
+                      <button 
+                        className="dropdown-item" 
+                        onClick={() => {
+                          showHolidayManager.value = true;
+                          showSettingsDropdown.value = false;
+                        }}
+                      >
+                        {t('Manage Holidays')}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -450,6 +461,16 @@ export function App() {
           lessons={lessons.value}
           labels={resourceLabels.value}
           initialLesson={editingLesson.value || {}}
+        />
+      )}
+
+      {showHolidayManager.value && (
+        <HolidayManager 
+          backendUrl={BACKEND_URL} 
+          onClose={() => showHolidayManager.value = false}
+          onUpdate={fetchData}
+          holidays={holidays.value}
+          initialYear={getYear(currentDate.value)}
         />
       )}
     </div>

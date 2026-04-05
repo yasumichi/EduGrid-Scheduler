@@ -1,0 +1,245 @@
+.holiday-manager-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.holiday-manager-box {
+  background-color: #242424;
+  color: #fff;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.holiday-manager-header {
+  padding: 16px;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.holiday-manager-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.holiday-manager-content {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.year-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #444;
+}
+
+.year-input-group, .year-calendar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.year-selector label {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.year-selector select, .year-selector input[type="date"] {
+  padding: 6px 12px;
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.header-actions button {
+  padding: 6px 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.holiday-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.holiday-list th, .holiday-list td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #444;
+}
+
+.holiday-list th {
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+.holiday-list button {
+  padding: 4px 8px;
+  margin-right: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.holiday-list .delete-btn {
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+.empty-message {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
+
+.holiday-form h3, .import-section h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  border-top: 1px solid #444;
+  padding-top: 16px;
+}
+
+.save-button {
+  padding: 8px 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-button {
+  padding: 8px 16px;
+  background: #4b5563;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.import-section h4 {
+  margin-bottom: 8px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 4px;
+}
+
+.import-nager, .import-json {
+  background: #1f2937;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.import-nager button {
+  width: 100%;
+  padding: 8px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.import-json input {
+  width: 100%;
+}
+
+@media (prefers-color-scheme: light) {
+  .holiday-manager-box { background-color: #fff; color: #333; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+  .holiday-manager-header { border-bottom-color: #eee; }
+  .close-button { color: #666; }
+  .year-selector label { color: #666; }
+  .year-selector select { background-color: #fff; border-color: #ccc; color: #333; }
+  .holiday-list th, .holiday-list td { border-bottom-color: #eee; }
+  .holiday-list th { color: #666; }
+  .holiday-list button { background-color: #f9f9f9; border-color: #ccc; color: #333; }
+  .holiday-list .delete-btn { color: #dc2626; border-color: #fca5a5; }
+  .empty-message { color: #999; }
+  .holiday-form h3, .import-section h3 { border-bottom-color: #eee; }
+  .form-group label { color: #666; }
+  .form-group input { background-color: #fff; border-color: #ccc; color: #333; }
+  .form-actions { border-top-color: #eee; }
+  .cancel-button { background-color: #6b7280; }
+  .import-section h4 { border-bottom-color: #eee; }
+  .import-nager, .import-json { background-color: #f3f4f6; }
+  .import-nager button { background-color: #10b981; }
+}
