@@ -569,10 +569,10 @@ app.get('/api/events', verifyToken, async (req, res) => {
   }
 });
 
-// 行事の作成・更新 (ADMIN権限)
+// 行事の作成・更新 (ADMIN/TEACHER権限)
 app.post('/api/events', verifyToken, async (req: AuthRequest, res) => {
-  if (req.user?.role !== UserRole.ADMIN) {
-    return res.status(403).json({ error: 'Access denied. Admin role required.' });
+  if (req.user?.role !== UserRole.ADMIN && req.user?.role !== UserRole.TEACHER) {
+    return res.status(403).json({ error: 'Access denied. Admin or Teacher role required.' });
   }
   const { id, name, startDate, startPeriodId, endDate, endPeriodId, color, showInEventRow, resourceIds } = req.body;
   try {
